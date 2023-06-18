@@ -12,6 +12,35 @@ from matplotlib import font_manager as fm, rcParams
 from requests.exceptions import ConnectionError,Timeout,TooManyRedirects
 import matplotlib.pyplot as plt
 import seaborn as sns
+import hashlib
+import random
+class YoudaoTranslator():
+
+    def __init__(self):
+        self.headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36",
+            "Referer": "https://fanyi.youdao.com/",
+            "Cookie": "OUTFOX_SEARCH_USER_ID=-873445509@10.108.162.139"
+        }
+        self.data = {
+            "i": None,
+            "client": "fanyideskweb",
+            "keyfrom": "fanyi.web",
+            "salt": None,
+            "sign": None,
+            "doctype": "json"
+        }
+        self.url = "http://fanyi.youdao.com/translate?smartresult-dict&smartresult-rule"
+
+    def translate(self, text):
+        self.data["i"] = text
+        salt = f"{int(time.time() * 1000)}{random.randint(0, 9)}"
+        self.data["salt"] = salt
+        sign = f"fanyideskweb{text}{salt}6x(ZHw]mwzX#uev70yfw"
+        self.data["sign"] = hashlib.md5(sign.encode("utf-8")).hexdigest()
+        res = requests.post(self.url, headers=self.headers, data=self.data)
+        return res.json()["translateResult"][0][0]["tgt"]
+translator = YoudaoTranslator()
 # ======= 正式开始执行
 prop = fm.FontProperties(fname='/root/xianhuo/SimHei.ttf')
 #pip install jojo-office
@@ -89,8 +118,7 @@ while logo ==0:
         time.sleep(1)
     except:
         continue
-from googletrans import Translator 
-translator=Translator(service_urls=['translate.google.com'])
+
 title_zhang = []
 for i in range(len(data_bullish['results'])):
     title_en = data_bullish['results'][i]['title']
@@ -98,14 +126,12 @@ for i in range(len(data_bullish['results'])):
     log = 0
     while log == 0:
         try:
-            title_t = translator.translate(title_en,"zh-CN","en")
+            title_t = translator.translate(title_en)
             time.sleep(1)
             log = 1
         except:
             continue
-    title_t = str(title_t)
-    title_ch = (title_t.split('text=')[1]).split('pronunciation')[0]
-    title_zhang.append(title_ch)
+    title_zhang.append(title_t)
 zhang_news_df = pd.DataFrame({'kanzhang':title_zhang})
 zhang_news_df['index'] = zhang_news_df.index
 title_die = []
@@ -115,14 +141,12 @@ for i in range(len(data_bearish['results'])):
     log = 0
     while log == 0:
         try:
-            title_t = translator.translate(title_en,"zh-CN","en")
+            title_t = translator.translate(title_en)
             time.sleep(1)
             log = 1
         except:
             continue
-    title_t = str(title_t)
-    title_ch = (title_t.split('text=')[1]).split('pronunciation')[0]
-    title_die.append(title_ch)
+    title_die.append(title_t)
 die_news_df = pd.DataFrame({'kandie':title_die})
 die_news_df['index'] = die_news_df.index
 
