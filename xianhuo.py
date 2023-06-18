@@ -15,7 +15,6 @@ import seaborn as sns
 import hashlib
 import random
 class YoudaoTranslator():
-
     def __init__(self):
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36",
@@ -945,7 +944,7 @@ else:
     sub_us_eco_df = sub_us_eco_df.reset_index(drop=True)
     event_t = sub_us_eco_df['事件'][0]
     document.add_paragraph('%s日%s经济数据公布'%(str(date_now)[0:10],event_t),style = 'ListBullet')
-    
+document.add_paragraph('金十数据日历提醒：https://datacenter.jin10.com',style = 'ListBullet')    
 t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
 hdr_cells = t.rows[0].cells
 hdr_cells[0].text = '事件' # 表头
@@ -989,7 +988,7 @@ pre_value = res_df_smart['value'][len(res_df_smart)-2]
 
 change = now_value - pre_value
 
-if change > 0:
+if change >= 0:
     content = '该地址昨日共买入%s个ETH'%(str(change))
     document.add_paragraph(content,style = 'ListBullet')
 else:
@@ -1005,7 +1004,7 @@ pre_value_fund = res_df_fund['value'][len(res_df_fund)-2]
 
 change_fund = now_value_fund - pre_value_fund
 
-if change_fund > 0:
+if change_fund >= 0:
     content_fund = '基金会地址昨日共转入%s个ETH'%(str(change_fund))
     document.add_paragraph(content_fund,style = 'ListBullet')
 else:
@@ -1032,13 +1031,17 @@ res_df = res_df.reset_index(drop=True)
 asopr_v = res_df['aSOPR'][len(res_df)-1]
 sopr_7v = res_df['7MA aSOPR'][len(res_df)-1]
 
-document.add_paragraph('当aSOPR值大于1时，说明BTC全网持有者总体处于盈利状态，当其小于1时，说明总体处于亏损状态，在目前市场状态下是看涨信号,可以少量现货进入。',style = 'ListBullet')
-document.add_paragraph('当7MA aSOPR值大于1时，说明BTC全网持有者总体处于盈利状态，当其小于1时，说明总体处于亏损状态，在目前市场状态下是可以开启定投。',style = 'ListBullet')
-document.add_paragraph('昨日收盘，BTC的aSOPR值为：%s'%(asopr_v),style = 'ListNumber')
-document.add_paragraph('昨日收盘，BTC的7MA aSOPR值为：%s'%(sopr_7v),style = 'ListNumber')
 
-document.add_picture('aSOPR.png',width = Inches(6.25))
-document.add_picture('7MA_aSOPR.png',width = Inches(6.25))
+document.add_paragraph('aSOPR',style = 'ListBullet')
+document.add_paragraph('当aSOPR值大于1时，说明BTC全网持有者总体处于盈利状态，当其小于1时，说明总体处于亏损状态，在目前市场状态下是看涨信号,可以少量现货进入。',style = 'ListBullet')
+document.add_paragraph('昨日收盘值为：%s'%(asopr_v),style = 'ListNumber')
+document.add_picture('aSOPR.png',width = Inches(5.25))
+
+
+document.add_paragraph('7MA aSOPR',style = 'ListBullet')
+document.add_paragraph('当7MA aSOPR值大于1时，说明BTC全网持有者总体处于盈利状态，当其小于1时，说明总体处于亏损状态，在目前市场状态下是可以开启定投。',style = 'ListBullet')
+document.add_paragraph('昨日收盘值为：%s'%(sopr_7v),style = 'ListNumber')
+document.add_picture('7MA_aSOPR.png',width = Inches(5.25))
 # ----- 长期链上指标
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
@@ -1049,21 +1052,24 @@ mvrv_v = res_df['MVRV Z-Score'][len(res_df)-1]
 supply_v = res_df['Percent Supply in Profit'][len(res_df)-1]
 rhodl_v = res_df['RHODL Ratio'][len(res_df)-1]
 
-document.add_paragraph('当Puell Multiple值大于4时，是牛顶信号，当其小于0.5时，是熊底信号。',style = 'ListBullet')
-document.add_paragraph('当MVRV Z-Score值大于7时，是牛顶信号，当其小于0时，是熊底信号。',style = 'ListBullet')
-document.add_paragraph('当Percent Supply in Profit值大于0.95时，是牛顶信号，当其小于0.5时，是熊底信号。',style = 'ListBullet')
-document.add_paragraph('当RHODL Ratio值大于49000时，是牛顶信号，当其小于350时，是熊底信号。',style = 'ListBullet')
 
-document.add_paragraph('MVRV Z-Score',style = 'ListBullet')          
+document.add_paragraph('MVRV Z-Score',style = 'ListBullet')
+document.add_paragraph('当MVRV Z-Score值大于7时，是牛顶信号，当其小于0时，是熊底信号。',style = 'ListBullet')      
 document.add_paragraph('昨日收盘值为：%s'%(mvrv_v),style = 'ListBullet')
 document.add_picture('MVRV_Z_Score.png',width = Inches(5.25))
+
 document.add_paragraph('Puell Multiple',style = 'ListBullet')
+document.add_paragraph('当Puell Multiple值大于4时，是牛顶信号，当其小于0.5时，是熊底信号。',style = 'ListBullet')
 document.add_paragraph('昨日收盘值为：%s'%(pm_v),style = 'ListBullet')
 document.add_picture('Puell.png',width = Inches(5.25))
+
 document.add_paragraph('Percent Supply in Profit',style = 'ListBullet')
+document.add_paragraph('当Percent Supply in Profit值大于0.95时，是牛顶信号，当其小于0.5时，是熊底信号。',style = 'ListBullet')
 document.add_paragraph('昨日收盘值为：%s'%(supply_v),style = 'ListBullet')
 document.add_picture('Percent_Supply.png',width = Inches(5.25))
+
 document.add_paragraph('RHODL Ratio',style = 'ListBullet')
+document.add_paragraph('当RHODL Ratio值大于49000时，是牛顶信号，当其小于350时，是熊底信号。',style = 'ListBullet')
 document.add_paragraph('昨日收盘值为：%s'%(rhodl_v),style = 'ListBullet')
 document.add_picture('RHODL.png',width = Inches(5.25))
 
