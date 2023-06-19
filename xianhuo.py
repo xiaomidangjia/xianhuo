@@ -469,9 +469,9 @@ def jigsaw(imgs, direction, gap=0):
         raise ValueError("The direction parameter has only two options: horizontal and vertical")
     return np.array(result)
 
-img1 = cv2.imread("/root/simi_history/fig_1.jpg")
-img2 = cv2.imread("/root/simi_history/fig_2.jpg")
-img3 = cv2.imread("/root/simi_history/fig_3.jpg")
+img1 = cv2.imread("fig_1.jpg")
+img2 = cv2.imread("fig_2.jpg")
+img3 = cv2.imread("fig_3.jpg")
 img = jigsaw([img1, img2,img3],direction="vertical")
 name = 'btc_simi.png'
 cv2.imwrite(name, img)
