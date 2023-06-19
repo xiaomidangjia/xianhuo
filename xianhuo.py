@@ -152,6 +152,331 @@ die_news_df['index'] = die_news_df.index
 news_df = zhang_news_df.merge(die_news_df,how='outer',on=['index'])
 news_df = news_df[['kanzhang','kandie']]
 
+# =========================================================================历史最相似===================================================================
+
+crypto_name = 'BTC'
+
+def cal_w(x):
+    if x>= pd.to_datetime('2013-01-01') and x<= pd.to_datetime('2013-12-31'):
+        y = 0
+    elif x>= pd.to_datetime('2014-01-01') and x<= pd.to_datetime('2014-12-31'):
+        y = 1
+    elif x>= pd.to_datetime('2015-01-01') and x<= pd.to_datetime('2016-12-31'):
+        y = 2
+    elif x>= pd.to_datetime('2017-01-01') and x<= pd.to_datetime('2017-12-31'):
+        y = 3
+    elif x>= pd.to_datetime('2018-01-01') and x<= pd.to_datetime('2018-12-31'):
+        y = 4
+    elif x>= pd.to_datetime('2019-01-01') and x<= pd.to_datetime('2019-12-31'):
+        y = 5
+    elif x>= pd.to_datetime('2020-01-01') and x<= pd.to_datetime('2021-11-30'):
+        y = 6
+    elif x>= pd.to_datetime('2021-12-01') and x<= pd.to_datetime('2022-12-31'):
+        y = 7
+    else:
+        y = 8
+    return y
+
+url_address = [ 'https://api.glassnode.com/v1/metrics/market/price_usd_ohlc']
+url_name = ['k_fold']
+# insert your API key here
+API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
+data_list = []
+for num in range(len(url_name)):
+    print(num)
+    addr = url_address[num]
+    name = url_name[num]
+    # make API request
+    res_addr = requests.get(addr,params={'a': crypto_name, 'api_key': API_KEY})
+    # convert to pandas dataframe
+    ins = pd.read_json(res_addr.text, convert_dates=['t'])
+    #ins.to_csv('test.csv')
+    #print(ins['o'])
+    ins['date'] =  ins['t']
+    ins['value'] =  ins['o']
+    ins = ins[['date','value']]
+    data_list.append(ins)
+result_data = data_list[0][['date']]
+for i in range(len(data_list)):
+    df = data_list[i]
+    result_data = result_data.merge(df,how='left',on='date')
+#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
+last_data = result_data[(result_data.date>='2013-01-01')]
+last_data = last_data.sort_values(by=['date'])
+last_data = last_data.reset_index(drop=True)
+#print(type(last_data))
+date = []
+open_p = []
+close_p = []
+high_p = []
+low_p = []
+for i in range(len(last_data)):
+    date.append(last_data['date'][i])
+    open_p.append(last_data['value'][i]['o'])
+    close_p.append(last_data['value'][i]['c'])
+    high_p.append(last_data['value'][i]['h'])
+    low_p.append(last_data['value'][i]['l'])
+res_data = pd.DataFrame({'date':date,'open':open_p,'close':close_p,'high':high_p,'low':low_p})
+res_data['judge'] = res_data['date'].apply(lambda x:cal_w(x))
+#res_data = res_data[res_data.judge == num_list]
+#res_data = res_data[res_data.judge==1]
+res_data = res_data.sort_values(by=['date'])
+res_data = res_data.reset_index(drop=True)  
+from scipy import stats
+#只和同一阶段内的数据比较，现在是萧条期，只和历史的萧条期比较
+last_7day_data = res_data[-14:]
+last_7day_price = list(last_7day_data['close'])
+print(last_7day_price)
+compare_data_1 = res_data[res_data.judge==2]
+compare_data_2 = res_data[res_data.judge==5]
+compare_data_1 = compare_data_1.reset_index(drop=True)
+compare_data_2 = compare_data_2.reset_index(drop=True)
+data_list = []
+date_list = []
+value = []
+for i in range(0,len(compare_data_2)-14):
+    ins = list(compare_data_2['close'][i:i+14])
+    data_list.append(ins)
+    ins_date = list(compare_data_2['date'][i:i+14])
+    date_list.append(ins_date)
+    p = stats.pearsonr(last_7day_price,ins)
+    #print(p)
+    value.append(p[0])
+maxid = value.index(np.max(value))
+simi_date = date_list[maxid]
+simi_data = data_list[maxid]
+last_7day_data['Open'] = last_7day_data['open']
+last_7day_data['Close'] = last_7day_data['close']
+last_7day_data['High'] = last_7day_data['high']
+last_7day_data['Low'] = last_7day_data['low']
+last_7day_data = last_7day_data[['date','Open','Close','High','Low']]
+last_7day_data = last_7day_data.set_index(last_7day_data['date'])
+filename_1 = 'fig_1.jpg'
+start_date = str(np.min(last_7day_data['date']))[0:10]
+end_date = str(np.max(last_7day_data['date']))[0:10]
+type_bk ='%s - %s BTC OHLC Candles'%(start_date,end_date)
+#设置绘制K线的基本参数
+import mplfinance as mpf
+#def draw_bk(title_name,filename,stock,add_plot):
+def draw_bk(title_name,filename,stock):
+    ##########################
+    # 设置marketcolors
+    mc = mpf.make_marketcolors(
+        up='red',
+        down='green',
+        edge='i',
+        wick='i',
+        volume='in',
+        inherit=True)
+
+    # 设置图形风格
+    s = mpf.make_mpf_style(
+        gridaxis='both',
+        gridstyle='-.',
+        y_on_right=False,
+        marketcolors=mc,
+        mavcolors=['yellow','blue'])
+
+    kwargs = dict(
+        type='candle',
+        mav=(5, 10),
+        volume=True,
+        title=title_name,
+        ylabel='OHLC Candles',
+        ylabel_lower='Traded Volume',
+        figratio=(25, 10),
+        figscale=2
+        )
+    mpf.plot(stock,
+             **kwargs,
+             style=s,
+             show_nontrading=False,
+             #addplot = add_plot,
+             savefig=filename
+             )
+
+import matplotlib.pyplot as plt
+import matplotlib as mpl# 用于设置曲线参数
+from cycler import cycler
+mc = mpf.make_marketcolors(
+    up='red',
+    down='green',
+    edge='i',
+    wick='i',
+    volume='in',
+    inherit=True)
+
+# 设置图形风格
+s = mpf.make_mpf_style(
+    gridaxis='both',
+    gridstyle='-.',
+    y_on_right=False,
+    marketcolors=mc,
+    #mavcolors=['yellow','blue']
+)
+
+kwargs = dict(
+    type='candle',
+    #mav=(5, 10),
+    volume=False,
+    title=type_bk,
+    ylabel='Price',
+    ylabel_lower='Traded Volume',
+    figratio=(25, 10),
+    figscale=1
+    )
+
+#add_plot = mpf.make_addplot(sub_ins[['lowerB','upperB','middleB']])
+#draw_bk(type_bk, filename,sub_ins)
+mpl.rcParams['axes.prop_cycle'] = cycler(
+    color=['dodgerblue','teal'])
+
+# 设置线宽
+mpl.rcParams['lines.linewidth'] = 0.5
+
+mpf.plot(last_7day_data,
+         **kwargs,
+         style=s,
+         show_nontrading=False,
+         #addplot = add_plot,
+         savefig=filename_1
+         )
+plt.show()
+min_simi_date = np.min(simi_date)
+simi_df = res_data[res_data.date>=min_simi_date]
+pre_simi_df = simi_df.reset_index(drop=True)
+simi_df = pre_simi_df[0:14]
+simi_df_pre = pre_simi_df[14:19]
+
+simi_df = simi_df.set_index(simi_df['date'])
+filename_2 = 'fig_2.jpg'
+start_date_p = str(np.min(simi_df['date']))[0:10]
+end_date_p = str(np.max(simi_df['date']))[0:10]
+type_bk_1 ='%s - %s BTC OHLC Candles'%(start_date_p,end_date_p)
+mc = mpf.make_marketcolors(
+    up='red',
+    down='green',
+    edge='i',
+    wick='i',
+    volume='in',
+    inherit=True)
+
+# 设置图形风格
+s = mpf.make_mpf_style(
+    gridaxis='both',
+    gridstyle='-.',
+    y_on_right=False,
+    marketcolors=mc,
+    #mavcolors=['yellow','blue']
+)
+
+kwargs = dict(
+    type='candle',
+    #mav=(5, 10),
+    volume=False,
+    title=type_bk_1,
+    ylabel='Price',
+    ylabel_lower='Traded Volume',
+    figratio=(25, 10),
+    figscale=1
+    )
+
+#add_plot = mpf.make_addplot(sub_ins[['lowerB','upperB','middleB']])
+#draw_bk(type_bk, filename,sub_ins)
+mpl.rcParams['axes.prop_cycle'] = cycler(
+    color=['dodgerblue','teal'])
+
+# 设置线宽
+mpl.rcParams['lines.linewidth'] = 0.5
+mpf.plot(simi_df,
+         **kwargs,
+         style=s,
+         show_nontrading=False,
+         #addplot = add_plot,
+         savefig=filename_2
+         )
+plt.show()
+
+
+filename_3 = 'fig_3.jpg'
+start_date_w = np.max(simi_df['date']) + datetime.timedelta(days=1)
+end_date_w = start_date_w + datetime.timedelta(days=7)
+
+next_df = res_data[(res_data.date >= start_date_w) & (res_data.date <= end_date_w)]
+next_df = next_df.set_index(next_df['date'])
+type_bk_2 ='%s - %s BTC OHLC Candles'%(str(start_date_w)[0:10],str(end_date_w)[0:10])
+mc = mpf.make_marketcolors(
+    up='red',
+    down='green',
+    edge='i',
+    wick='i',
+    volume='in',
+    inherit=True)
+
+# 设置图形风格
+s = mpf.make_mpf_style(
+    gridaxis='both',
+    gridstyle='-.',
+    y_on_right=False,
+    marketcolors=mc,
+    #mavcolors=['yellow','blue']
+)
+
+kwargs = dict(
+    type='candle',
+    #mav=(5, 10),
+    volume=False,
+    title=type_bk_2,
+    ylabel='Price',
+    ylabel_lower='Traded Volume',
+    figratio=(25, 10),
+    figscale=1
+    )
+
+#add_plot = mpf.make_addplot(sub_ins[['lowerB','upperB','middleB']])
+#draw_bk(type_bk, filename,sub_ins)
+mpl.rcParams['axes.prop_cycle'] = cycler(
+    color=['dodgerblue','teal'])
+
+# 设置线宽
+mpl.rcParams['lines.linewidth'] = 0.5
+mpf.plot(next_df,
+         **kwargs,
+         style=s,
+         show_nontrading=False,
+         #addplot = add_plot,
+         savefig=filename_3
+         )
+plt.show()
+
+# coding=utf-8
+from PIL import Image, ImageDraw, ImageFont
+import cv2
+
+
+def jigsaw(imgs, direction, gap=0):
+    imgs = [Image.fromarray(img) for img in imgs]
+    w, h = imgs[0].size
+    if direction == "horizontal":
+        result = Image.new(imgs[0].mode, ((w+gap)*len(imgs)-gap, h))
+        for i, img in enumerate(imgs):
+            result.paste(img, box=((w+gap)*i, 0))
+    elif direction == "vertical":
+        result = Image.new(imgs[0].mode, (w, (h+gap)*len(imgs)-gap))
+        for i, img in enumerate(imgs):
+            result.paste(img, box=(0, (h+gap)*i))
+    else:
+        raise ValueError("The direction parameter has only two options: horizontal and vertical")
+    return np.array(result)
+
+img1 = cv2.imread("/root/simi_history/fig_1.jpg")
+img2 = cv2.imread("/root/simi_history/fig_2.jpg")
+img3 = cv2.imread("/root/simi_history/fig_3.jpg")
+img = jigsaw([img1, img2,img3],direction="vertical")
+name = 'btc_simi.png'
+cv2.imwrite(name, img)
+
+
 # =======================================================================黑天鹅地址监控===================================================================
 
 url_address = [ 'https://api.glassnode.com/v1/metrics/distribution/balance_us_government','https://api.glassnode.com/v1/metrics/distribution/balance_mtgox_trustee','https://api.glassnode.com/v1/metrics/market/price_usd_close']
@@ -802,8 +1127,181 @@ axes_fu.set_ylabel("Percent Supply in Profit",fontsize=10)
 plt.savefig('Percent_Supply.png')
 plt.close()
 
+# ========================================================================附录=========================================================================
+url_address = ['https://api.glassnode.com/v1/metrics/market/price_usd_close']
+url_name = ['Price']
+# insert your API key here
+API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
+data_list = []
+for num in range(len(url_name)):
+    print(num)
+    addr = url_address[num]
+    name = url_name[num]
+    # make API request
+    res_addr = requests.get(addr,params={'a': 'BTC', 'api_key': API_KEY})
+    # convert to pandas dataframe
+    ins = pd.read_json(res_addr.text, convert_dates=['t'])
+    ins['date'] =  ins['t']
+    ins[name] =  ins['v']
+    ins = ins[['date',name]]
+    data_list.append(ins)
+
+result_data = data_list[0][['date']]
+for i in range(len(data_list)):
+    df = data_list[i]
+    result_data = result_data.merge(df,how='left',on='date')
+#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
+btc_data = result_data[(result_data.date>='2019-10-01')]
+btc_data = btc_data.sort_values(by=['date'])
+btc_data = btc_data.reset_index(drop=True)
+data_list = []
+for num in range(len(url_name)):
+    print(num)
+    addr = url_address[num]
+    name = url_name[num]
+    # make API request
+    res_addr = requests.get(addr,params={'a': 'ETH', 'api_key': API_KEY})
+    # convert to pandas dataframe
+    ins = pd.read_json(res_addr.text, convert_dates=['t'])
+    ins['date'] =  ins['t']
+    ins[name] =  ins['v']
+    ins = ins[['date',name]]
+    data_list.append(ins)
+
+result_data = data_list[0][['date']]
+for i in range(len(data_list)):
+    df = data_list[i]
+    result_data = result_data.merge(df,how='left',on='date')
+#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
+eth_data = result_data[(result_data.date>='2019-01-01')]
+eth_data = eth_data.sort_values(by=['date'])
+eth_data = eth_data.reset_index(drop=True)
+combine_data = eth_data.merge(btc_data,how='left',on=['date'])
+combine_data['per'] = combine_data['Price_x']/combine_data['Price_y']
 
 
+f, axes = plt.subplots(figsize=(20, 10))
+axes_fu = axes.twinx()
+sns.lineplot(x="date", y="per",color='red',data=combine_data, ax=axes_fu)
+sns.lineplot(x="date", y="Price_y",color='black', data=combine_data, ax=axes)
+axes.tick_params(labelsize=10)
+plt.title('ETH Price/BTC Price', fontsize=10) 
+axes.legend(loc='upper left', fontsize=5)
+axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
+axes.set_ylabel("BTC price",fontsize=10)
+axes_fu.set_ylabel("ETH Price/BTC Price",fontsize=10)
+
+#plt.show()
+plt.savefig('eth_btc.png')
+plt.close()
+
+
+# meme币
+import json
+import requests
+import pandas as pd
+import time
+import numpy as np
+import os
+import re
+import datetime
+from requests import Request,Session
+from datetime import datetime
+from datetime import timedelta
+import pandas as pd
+from requests.exceptions import ConnectionError,Timeout,TooManyRedirects
+url = 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/ohlcv/historical'
+headers = {'X-CMC_PRO_API_KEY':'4e4b92a2-8f26-48bf-91d2-11200a6441c2'}
+session = Session()
+session.headers.update(headers)
+#74，doge,5994,shib,24478,pepe,25028,ordi
+ids = [74,5994,24478,25028]
+res_df = pd.DataFrame()
+for s_id in ids:
+    response = session.get(url,params={'convert_id':2781,'id':s_id})
+    data = json.loads(response.text)
+    print(data)
+    name = data['data']['symbol']
+    print(name)
+    lis = data['data']['quotes']
+    close = []
+    date = []
+    for i in range(len(lis)):
+        close.append(lis[i]['quote']['2781']['close'])
+        date.append(lis[i]['quote']['2781']['timestamp'])
+    df = pd.DataFrame({'date':date,'close':close})
+    df['name'] = name
+    res_df = pd.concat([res_df,df])
+    time.sleep(2)
+res_df['date'] = res_df['date'].apply(lambda x:str(x)[0:10])
+res_df_doge = res_df[res_df.name=='DOGE']
+res_df_doge['close'] = res_df_doge['close'].apply(lambda x:round(x,3))
+res_df_doge = res_df_doge[['date','close']]
+res_df_shib = res_df[res_df.name=='SHIB']
+res_df_shib['close'] = res_df_shib['close'].apply(lambda x:round(x,9))
+res_df_shib = res_df_shib[['date','close']]
+res_df_pepe = res_df[res_df.name=='PEPE']
+res_df_pepe['close'] = res_df_pepe['close'].apply(lambda x:round(x,7))
+res_df_pepe = res_df_pepe[['date','close']]
+res_df_ordi = res_df[res_df.name=='ORDI']
+res_df_ordi['close'] = res_df_ordi['close'].apply(lambda x:round(x,3))
+res_df_ordi = res_df_ordi[['date','close']]
+res_df_all = res_df_doge.merge(res_df_shib,how='left',on=['date']).merge(res_df_pepe,how='left',on=['date']).merge(res_df_ordi,how='left',on=['date'])
+
+
+#山寨
+url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/historical'
+headers = {'X-CMC_PRO_API_KEY':'4e4b92a2-8f26-48bf-91d2-11200a6441c2'}
+session = Session()
+session.headers.update(headers)
+date_now = str(datetime.utcnow())[0:10]
+data_before_1 = str(pd.to_datetime(date_now) - timedelta(days=1))[0:10]
+date_before = ['2023-01-01',data_before_1]
+
+crypto_info = pd.DataFrame() 
+for j in range(len(date_before)):
+    date_j = date_before[j]
+    print(j)
+    logo = 0
+    while logo == 0:
+        response = session.get(url,params={'convert_id':2781,'date':date_j })
+        data = json.loads(response.text)
+        print(data['status']['error_code'])
+        if data['status']['error_code'] != 0:
+            logo = 0
+        else:
+            for i in range(len(data['data'])):
+                id_num = data['data'][i]['id']
+                name = data['data'][i]['name']
+                symbol = data['data'][i]['symbol']
+                date_added = data['data'][i]['date_added']
+                tags = data['data'][i]['tags']
+                circulating_supply = data['data'][i]['circulating_supply']
+                total_supply = data['data'][i]['total_supply']
+                cmc_rank = data['data'][i]['cmc_rank']
+                last_updated = data['data'][i]['last_updated']   
+                price = data['data'][i]['quote']['2781']['price']     
+                market_cap = data['data'][i]['quote']['2781']['market_cap']      
+                #print(id_num,id_num,name,symbol,date_added,tags,circulating_supply,total_supply,cmc_rank,last_updated,price,market_cap)
+                df = pd.DataFrame({'date':date_j,'id':id_num,'name':name,'symbol':symbol,'date_added':date_added,'tags':str(tags),'circulating_supply':circulating_supply,'total_supply':total_supply,'cmc_rank':cmc_rank,'last_updated':last_updated,'price':price,'market_cap':market_cap},index=[0])
+                crypto_info = pd.concat([crypto_info,df])
+                
+            logo = 1
+            #crypto_info = crypto_info.reset_index()
+    time.sleep(1)
+crypto_info_now = crypto_info[crypto_info.date==data_before_1]
+crypto_info_now = crypto_info_now[['symbol','price','market_cap']]
+crypto_info_before = crypto_info[crypto_info.date=='2023-01-01']
+crypto_info_before = crypto_info_before[['symbol','price','market_cap']]
+crypto_tag =  crypto_info[crypto_info.date=='2023-06-18'][['symbol','tags']].drop_duplicates()
+crypto_info_combine = crypto_info_now.merge(crypto_info_before,how='left',on=['symbol']).merge(crypto_tag,how='left',on=['symbol'])
+crypto_info_combine = crypto_info_combine.fillna(0.00000000000001)
+crypto_info_combine['per'] =  (crypto_info_combine['price_x']- crypto_info_combine['price_y'])/crypto_info_combine['price_y']
+per_btc = (crypto_info_combine['price_x'][0] - crypto_info_combine['price_y'][0])/crypto_info_combine['price_y'][0]
+crypto_info_last = crypto_info_combine[crypto_info_combine.per>per_btc]
+crypto_info_last = crypto_info_last[['symbol','price_x','market_cap_x','tags']]
+crypto_info_last['num'] = crypto_info_last.index
+crypto_info_last
 # =======================================================================输出docment===================================================================
 import sys
 from docx import Document
@@ -814,12 +1312,12 @@ document = Document()
 document.add_heading(u'%s日BTC现货策略数据'%(str(date_now)[0:10]),0)
 # 添加有序列表
 document.add_paragraph('昨日重要新闻一览',style = 'ListBullet')
+document.add_paragraph('BTC价格回顾',style = 'ListBullet')
 document.add_paragraph('黑天鹅事件监控',style = 'ListBullet')
 document.add_paragraph('链上大额转账监控',style = 'ListBullet')
 document.add_paragraph('链上稳定币监控',style = 'ListBullet')
 document.add_paragraph('美国重要经济数据公布日期',style = 'ListBullet')
 document.add_paragraph('聪明钱地址监控',style = 'ListBullet')
-document.add_paragraph('BTC价格120d/200d/4y均线',style = 'ListBullet')
 document.add_paragraph('USDT场外溢价率预测',style = 'ListBullet')
 document.add_paragraph('链上行情短期指标',style = 'ListBullet')
 document.add_paragraph('链上行情长期指标',style = 'ListBullet')
@@ -843,6 +1341,28 @@ for d in news_df.values.tolist(): #
         row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
         row_cells[0].text = kanzhang 
         row_cells[1].text = kandie
+# -----  120/200/4y 均线
+document.add_page_break()
+#p = document.add_paragraph('This is a paragraph in new page.')
+document.add_heading(u'6.BTC价格120d/200d/4y均线',level = 1)
+jun_df = jun_df.reset_index(drop=True)
+value_1 = jun_df['price_raw'][len(jun_df)-1]
+value_120 = jun_df['price_ma120'][len(jun_df)-1]
+value_200 = jun_df['price_ma200'][len(jun_df)-1]
+value_4y = jun_df['price_ma4y'][len(jun_df)-1]
+
+document.add_paragraph('昨日BTC收盘价格为：%s'%(str(value_1)),style = 'ListBullet')
+document.add_paragraph('昨日BTC收盘MA120价格为：%s'%(str(value_120)),style = 'ListBullet')
+document.add_paragraph('昨日BTC收盘MA200价格为：%s'%(str(value_200)),style = 'ListBullet')
+document.add_paragraph('昨日BTC收盘MA4Y价格为：%s'%(str(value_4y)),style = 'ListBullet')
+# 添加图片，并指定宽度
+document.add_picture('BTC价格120D.png',width = Inches(6.25))
+
+document.add_paragraph('历史相似行情',style = 'ListBullet')
+# 添加图片，并指定宽度
+document.add_picture('btc_simi.png',width = Inches(6.25))
+
+
 
 # -----  黑天鹅事件
 document.add_page_break()
@@ -962,22 +1482,6 @@ for d in us_eco_df.values.tolist(): #
         row_cells[2].text = str(date) 
         row_cells[3].text = pre_value
         row_cells[4].text = before_value 
-# -----  120/200/4y 均线
-document.add_page_break()
-#p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'6.BTC价格120d/200d/4y均线',level = 1)
-jun_df = jun_df.reset_index(drop=True)
-value_1 = jun_df['price_raw'][len(jun_df)-1]
-value_120 = jun_df['price_ma120'][len(jun_df)-1]
-value_200 = jun_df['price_ma200'][len(jun_df)-1]
-value_4y = jun_df['price_ma4y'][len(jun_df)-1]
-
-document.add_paragraph('昨日BTC收盘价格为：%s'%(str(value_1)),style = 'ListBullet')
-document.add_paragraph('昨日BTC收盘MA120价格为：%s'%(str(value_120)),style = 'ListBullet')
-document.add_paragraph('昨日BTC收盘MA200价格为：%s'%(str(value_200)),style = 'ListBullet')
-document.add_paragraph('昨日BTC收盘MA4Y价格为：%s'%(str(value_4y)),style = 'ListBullet')
-# 添加图片，并指定宽度
-document.add_picture('BTC价格120D.png',width = Inches(6.25))
 
 # ----- 聪明钱地址
 document.add_page_break()
@@ -1034,13 +1538,13 @@ sopr_7v = res_df['7MA aSOPR'][len(res_df)-1]
 
 document.add_paragraph('aSOPR',style = 'ListBullet')
 document.add_paragraph('当aSOPR值大于1时，说明BTC全网持有者总体处于盈利状态，当其小于1时，说明总体处于亏损状态，在目前市场状态下是看涨信号,可以少量现货进入。',style = 'ListBullet')
-document.add_paragraph('昨日收盘值为：%s'%(asopr_v),style = 'ListNumber')
+document.add_paragraph('昨日收盘值为：%s'%(asopr_v),style = 'ListBullet')
 document.add_picture('aSOPR.png',width = Inches(5.25))
 
 
 document.add_paragraph('7MA aSOPR',style = 'ListBullet')
 document.add_paragraph('当7MA aSOPR值大于1时，说明BTC全网持有者总体处于盈利状态，当其小于1时，说明总体处于亏损状态，在目前市场状态下是可以开启定投。',style = 'ListBullet')
-document.add_paragraph('昨日收盘值为：%s'%(sopr_7v),style = 'ListNumber')
+document.add_paragraph('昨日收盘值为：%s'%(sopr_7v),style = 'ListBullet')
 document.add_picture('7MA_aSOPR.png',width = Inches(5.25))
 # ----- 长期链上指标
 document.add_page_break()
@@ -1072,6 +1576,55 @@ document.add_paragraph('RHODL Ratio',style = 'ListBullet')
 document.add_paragraph('当RHODL Ratio值大于49000时，是牛顶信号，当其小于350时，是熊底信号。',style = 'ListBullet')
 document.add_paragraph('昨日收盘值为：%s'%(rhodl_v),style = 'ListBullet')
 document.add_picture('RHODL.png',width = Inches(5.25))
+
+# ===============================================================附录===================================================================
+document.add_page_break()
+#p = document.add_paragraph('This is a paragraph in new page.')
+document.add_heading(u'附录',level = 1)
+
+per_1 = combine_data['per'][len(combine_data)-1]
+document.add_paragraph('ETH Price/BTC Price',style = 'ListBullet')
+document.add_paragraph('当前该比值为：%s'%(per_1),style = 'ListBullet')
+document.add_picture('eth_btc.png',width = Inches(5.25))
+
+document.add_paragraph('山寨币',style = 'ListBullet')
+t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
+hdr_cells = t.rows[0].cells
+hdr_cells[0].text = '排名' # 表头
+hdr_cells[1].text = '币种'# 表头
+hdr_cells[2].text = '价格'# 表头
+hdr_cells[3].text = '市值'# 表头
+hdr_cells[4].text = '标记'# 表头
+
+for d in crypto_info_last.values.tolist(): # 
+    print(d)
+    for symbol,price_x,market_cap_x,tags,num in [d]: # 读取每一行内容
+        row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
+        row_cells[0].text = str(num) 
+        row_cells[1].text = str(symbol)
+        row_cells[2].text = str(price_x) 
+        row_cells[3].text = str(market_cap_x)
+        row_cells[4].text = str(tags)
+
+document.add_paragraph('MEME币',style = 'ListBullet')
+document.add_paragraph('MEME币作为市场情绪的判断，一般其到达高峰就是下跌的开始。',style = 'ListBullet')
+t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
+hdr_cells = t.rows[0].cells
+hdr_cells[0].text = '时间' # 表头
+hdr_cells[1].text = 'DOGE'# 表头
+hdr_cells[2].text = 'SHIB'# 表头
+hdr_cells[3].text = 'PEPE'# 表头
+hdr_cells[4].text = 'ORDI'# 表头
+
+for d in res_df_all.values.tolist(): # 
+    print(d)
+    for date,doge,shib,pepe,ordi in [d]: # 读取每一行内容
+        row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
+        row_cells[0].text = str(date) 
+        row_cells[1].text = str(doge)
+        row_cells[2].text = str(pepe) 
+        row_cells[3].text = str(ordi)
+
 
 # 保存文档
 document.save('BTC现货策略数据.doc')
