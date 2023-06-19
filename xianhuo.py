@@ -1585,7 +1585,7 @@ document.add_heading(u'附录',level = 1)
 per_1 = combine_data['per'][len(combine_data)-1]
 document.add_paragraph('ETH Price/BTC Price',style = 'ListBullet')
 document.add_paragraph('当前该比值为：%s'%(per_1),style = 'ListBullet')
-document.add_picture('eth_btc.png',width = Inches(5.25))
+document.add_picture('eth_btc.png',width = Inches(6.25))
 
 document.add_paragraph('山寨币',style = 'ListBullet')
 t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
@@ -1594,7 +1594,6 @@ hdr_cells[0].text = '排名' # 表头
 hdr_cells[1].text = '币种'# 表头
 hdr_cells[2].text = '价格'# 表头
 hdr_cells[3].text = '市值'# 表头
-hdr_cells[4].text = '标记'# 表头
 
 for d in crypto_info_last.values.tolist(): # 
     print(d)
@@ -1603,8 +1602,7 @@ for d in crypto_info_last.values.tolist(): #
         row_cells[0].text = str(num) 
         row_cells[1].text = str(symbol)
         row_cells[2].text = str(price_x) 
-        row_cells[3].text = str(market_cap_x)
-        row_cells[4].text = str(tags)
+        row_cells[3].text = str(round(market_cap_x,2))
 
 document.add_paragraph('MEME币',style = 'ListBullet')
 document.add_paragraph('MEME币作为市场情绪的判断，一般其到达高峰就是下跌的开始。',style = 'ListBullet')
@@ -1622,9 +1620,9 @@ for d in res_df_all.values.tolist(): #
         row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
         row_cells[0].text = str(date) 
         row_cells[1].text = str(doge)
-        row_cells[2].text = str(pepe) 
-        row_cells[3].text = str(ordi)
-
+        row_cells[2].text = str(shib) 
+        row_cells[3].text = str(pepe)
+        row_cells[4].text = str(ordi)
 
 # 保存文档
 document.save('BTC现货策略数据.doc')
