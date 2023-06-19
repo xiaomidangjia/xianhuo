@@ -1216,7 +1216,7 @@ session = Session()
 session.headers.update(headers)
 #74，doge,5994,shib,24478,pepe,25028,ordi
 ids = [74,5994,24478,25028]
-res_df = pd.DataFrame()
+res_df_meme = pd.DataFrame()
 for s_id in ids:
     response = session.get(url,params={'convert_id':2781,'id':s_id})
     data = json.loads(response.text)
@@ -1231,19 +1231,19 @@ for s_id in ids:
         date.append(lis[i]['quote']['2781']['timestamp'])
     df = pd.DataFrame({'date':date,'close':close})
     df['name'] = name
-    res_df = pd.concat([res_df,df])
+    res_df_meme = pd.concat([res_df_meme,df])
     time.sleep(2)
-res_df['date'] = res_df['date'].apply(lambda x:str(x)[0:10])
-res_df_doge = res_df[res_df.name=='DOGE']
+res_df_meme['date'] = res_df_meme['date'].apply(lambda x:str(x)[0:10])
+res_df_doge = res_df_meme[res_df_meme.name=='DOGE']
 res_df_doge['close'] = res_df_doge['close'].apply(lambda x:round(x,3))
 res_df_doge = res_df_doge[['date','close']]
-res_df_shib = res_df[res_df.name=='SHIB']
+res_df_shib = res_df_meme[res_df_meme.name=='SHIB']
 res_df_shib['close'] = res_df_shib['close'].apply(lambda x:round(x,9))
 res_df_shib = res_df_shib[['date','close']]
-res_df_pepe = res_df[res_df.name=='PEPE']
+res_df_pepe = res_df_meme[res_df_meme.name=='PEPE']
 res_df_pepe['close'] = res_df_pepe['close'].apply(lambda x:round(x,7))
 res_df_pepe = res_df_pepe[['date','close']]
-res_df_ordi = res_df[res_df.name=='ORDI']
+res_df_ordi = res_df_meme[res_df_meme.name=='ORDI']
 res_df_ordi['close'] = res_df_ordi['close'].apply(lambda x:round(x,3))
 res_df_ordi = res_df_ordi[['date','close']]
 res_df_all = res_df_doge.merge(res_df_shib,how='left',on=['date']).merge(res_df_pepe,how='left',on=['date']).merge(res_df_ordi,how='left',on=['date'])
