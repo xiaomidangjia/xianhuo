@@ -1248,7 +1248,7 @@ res_df_ordi['close'] = res_df_ordi['close'].apply(lambda x:round(x,3))
 res_df_ordi = res_df_ordi[['date','close']]
 res_df_all = res_df_doge.merge(res_df_shib,how='left',on=['date']).merge(res_df_pepe,how='left',on=['date']).merge(res_df_ordi,how='left',on=['date'])
 
-
+'''
 #山寨
 url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/historical'
 headers = {'X-CMC_PRO_API_KEY':'4e4b92a2-8f26-48bf-91d2-11200a6441c2'}
@@ -1302,6 +1302,7 @@ crypto_info_last = crypto_info_combine[crypto_info_combine.per>per_btc]
 crypto_info_last = crypto_info_last[['symbol','price_x','market_cap_x','tags']]
 crypto_info_last['num'] = crypto_info_last.index
 crypto_info_last
+'''
 # =======================================================================输出docment===================================================================
 import sys
 from docx import Document
@@ -1586,7 +1587,7 @@ per_1 = combine_data['per'][len(combine_data)-1]
 document.add_paragraph('ETH Price/BTC Price',style = 'ListBullet')
 document.add_paragraph('当前该比值为：%s'%(per_1),style = 'ListBullet')
 document.add_picture('eth_btc.png',width = Inches(6.25))
-
+'''
 document.add_paragraph('山寨币',style = 'ListBullet')
 t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
 hdr_cells = t.rows[0].cells
@@ -1603,7 +1604,7 @@ for d in crypto_info_last.values.tolist(): #
         row_cells[1].text = str(symbol)
         row_cells[2].text = str(price_x) 
         row_cells[3].text = str(round(market_cap_x,2))
-
+'''
 document.add_paragraph('MEME币',style = 'ListBullet')
 document.add_paragraph('MEME币作为市场情绪的判断，一般其到达高峰就是下跌的开始。',style = 'ListBullet')
 t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
