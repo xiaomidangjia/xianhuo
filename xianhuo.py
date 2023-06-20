@@ -1374,10 +1374,6 @@ document.add_paragraph(content_us,style = 'ListBullet')
 document.add_paragraph(content_gox,style = 'ListBullet')
 # 添加图片，并指定宽度
 document.add_picture('US_MT.png',width = Inches(6.25))
-document.add_paragraph('MEME币情况',style = 'ListBullet')
-document.add_paragraph('包括Doge,Shib,Pepe,Ordi等',style = 'ListNumber')
-document.add_paragraph('当BTC到达一个阶段的顶部盘整时，MEME币狂飙就要注意空头趋势。',style = 'ListNumber')
-
 
 # -----  链上大额转账监控
 document.add_page_break()
