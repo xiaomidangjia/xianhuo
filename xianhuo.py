@@ -557,7 +557,7 @@ date_now = datetime.datetime.utcnow()
 #print(date_now)
 date_before = pd.to_datetime(date_now) - datetime.timedelta(hours=6)
 zhuanzhang_df = zhuanzhang_df[zhuanzhang_df.date>=date_before]
-
+zhuanzhang_df = zhuanzhang_df.drop_duplicates()
 
 
 # =======================================================================链上的4种稳定币===================================================================
@@ -764,17 +764,22 @@ while logo ==0:
     try:
         response = session.get(url)
         data = json.loads(response.text)
-        logo = 1
-        time.sleep(1)
+        date = []
+        ba = []
+        for i in range(len(data['data'])):
+            ins = data['data'][i]
+            date.append(next(iter(ins.keys())))
+            ba.append(float(next(iter(ins.values()))))
+        sub_df = pd.DataFrame({'date':date,'value':ba})
+        sub_df_n = sub_df[sub_df.value < 100]
+        if len(sub_df_n) == 0:
+            logo = 1
+        else:
+            logo = 0
+            time.sleep(1)
     except:
         continue
-date = []
-ba = []
-for i in range(len(data['data'])):
-    ins = data['data'][i]
-    date.append(next(iter(ins.keys())))
-    ba.append(float(next(iter(ins.values()))))
-sub_df = pd.DataFrame({'date':date,'value':ba})
+
 sub_df['date'] = pd.to_datetime(sub_df['date'])
 res_df_smart = sub_df.merge(price_data[['date','close']],how='left',on=['date'])
 res_df_smart = res_df_smart.sort_values(by='date')
@@ -997,7 +1002,7 @@ for j in range(len(last_data)-49):
     mvrv.append(ins['MVRV Z-Score'][49])
     rhold.append(ins['RHODL Ratio'][49])
     sopr.append(ins['aSOPR'][49])
-    supply.append(np.mean(ins['Percent Supply in Profit'][-40:]))
+    supply.append(ins['Percent Supply in Profit'][49])
     price.append(ins['Price'][49])
     #短期指标
     sopr_7.append(np.mean(ins['aSOPR'][-7:]))
@@ -1380,7 +1385,7 @@ document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
 document.add_heading(u'3.链上大额转账监控',level = 1)
 
-sub_zhuanzhang_df_1 = zhuanzhang_df[(zhuanzhang_df.crypto.isin (['BTC','ETH'])) & (zhuanzhang_df.value>10000000)]
+sub_zhuanzhang_df_1 = zhuanzhang_df[(zhuanzhang_df.crypto.isin (['BTC','ETH'])) & (zhuanzhang_df.value>1000)]
 document.add_paragraph('大额BTC/ETH流入交易所是砸盘信号，大额USDT/USDC转入交易所是买盘信号。',style = 'ListBullet')
 if len(sub_zhuanzhang_df_1) == 0:
     content_tr = '近6个小时没有超大额(价值大于1000万刀)BTC/ETH转入交易所。'
@@ -1393,7 +1398,7 @@ else:
         s_exchange = sub_zhuanzhang_df_1['exchange'][i]
         s_hash = sub_zhuanzhang_df_1['hash'][i]
         content_tr = '%s有大额%s转入%s交易所，交易哈希为：%s'%(s_date,s_crypto,s_exchange,s_hash)
-sub_zhuanzhang_df_2 = zhuanzhang_df[(zhuanzhang_df.crypto.isin (['USDT','USDC'])) & (zhuanzhang_df.value>10000000)]
+sub_zhuanzhang_df_2 = zhuanzhang_df[(zhuanzhang_df.crypto.isin (['USDT','USDC'])) & (zhuanzhang_df.value>1000)]
 if len(sub_zhuanzhang_df_2) == 0:
     content_tr_w = '近6个小时没有超大额(价值大于1000万刀)USDT/USDT转入交易所。'
     document.add_paragraph(content_tr_w,style = 'ListBullet')
