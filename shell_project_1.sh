@@ -1,3 +1,3 @@
 #!/bin/bash
 cd /root/xianhuo
-python3 xianhuo.py
+/root/anaconda3/bin/python3.8 xianhuo.py
