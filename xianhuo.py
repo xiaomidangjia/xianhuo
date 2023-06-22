@@ -509,6 +509,14 @@ last_data.rename(columns={'value_x':'Balance US','value_y':'Balance Mt.GOX'},inp
 last_data = last_data.sort_values(by=['date'])
 last_data = last_data.reset_index(drop=True)
 
+last_data_us = last_data[['date','Balance US']]
+last_data_us['nb'] = last_data_us['Balance US'].shift(-1)
+last_data_us['nd'] = last_data_us['date'].shift(-1)
+last_data_us = last_data_us[0:-1]
+last_data_us['cha'] = last_data_us['nb'] - last_data_us['Balance US']
+last_data_us = last_data_us[last_data_us.cha < 0]
+last_data_us = last_data_us[['nd','nb','Balance US']]
+
 us_pre_b = last_data['Balance US'][len(last_data)-2]
 us_pre_t = last_data['Balance US'][len(last_data)-1]
 
@@ -856,6 +864,7 @@ raw_data = raw_data[(raw_data.date >= date_before) & (raw_data.date < date_now)]
 raw_data['date_dd'] = raw_data['date'].apply(lambda x: str(x)[0:10])
 raw_data['date_hh'] = raw_data['date'].apply(lambda x: str(x)[11:13])
 raw_data['per'] = raw_data['usdt']/raw_data['usd']
+usdt_data = raw_data
 raw_data = raw_data[['date_dd','date_hh','per']]
 raw_data = raw_data.drop_duplicates()
 raw_data = raw_data.groupby(['date_dd','date_hh'],as_index=False)['per'].mean()
@@ -878,6 +887,7 @@ for i in range(len(raw_data)):
         per_last.append(raw_data['per'][i])
 raw_data['per_last'] = per_last
 raw_data = raw_data[['date_dd','date_hh','per_last']]
+
 #启用价格
 url_address = ['https://api.glassnode.com/v1/metrics/market/price_usd_close']
 url_name = ['Price']
@@ -1380,6 +1390,24 @@ document.add_paragraph(content_gox,style = 'ListBullet')
 # 添加图片，并指定宽度
 document.add_picture('US_MT.png',width = Inches(6.25))
 
+document.add_heading(u'今年美国政府转移BTC时间',level = 1)
+t = document.add_table(rows=1, cols=3) # 插入表格，先将表头写好，参数：rows:行，cols:列
+hdr_cells = t.rows[0].cells
+hdr_cells[0].text = '时间' # 表头
+hdr_cells[1].text = '余额'# 表头
+hdr_cells[2].text = '前一天余额'# 表头
+
+for d in last_data_us.values.tolist(): # 
+    print(d)
+    for date,v1,v2 in [d]: # 读取每一行内容
+        row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
+        row_cells[0].text = str(date) 
+        row_cells[1].text = str(v1)
+        row_cells[2].text = str(v2)
+
+
+
+
 # -----  链上大额转账监控
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
@@ -1398,6 +1426,7 @@ else:
         s_exchange = sub_zhuanzhang_df_1['exchange'][i]
         s_hash = sub_zhuanzhang_df_1['hash'][i]
         content_tr = '%s有大额%s转入%s交易所，交易哈希为：%s'%(s_date,s_crypto,s_exchange,s_hash)
+        document.add_paragraph(content_tr,style = 'ListBullet')
 sub_zhuanzhang_df_2 = zhuanzhang_df[(zhuanzhang_df.crypto.isin (['USDT','USDC'])) & (zhuanzhang_df.value>1000)]
 if len(sub_zhuanzhang_df_2) == 0:
     content_tr_w = '近6个小时没有超大额(价值大于1000万刀)USDT/USDT转入交易所。'
@@ -1409,9 +1438,10 @@ else:
         s_crypto = sub_zhuanzhang_df_2['crypto'][i]
         s_exchange = sub_zhuanzhang_df_2['exchange'][i]
         s_hash = sub_zhuanzhang_df_2['hash'][i]
-        content_tr = '%s有大额%s转入%s交易所，交易哈希为：%s'%(s_date,s_crypto,s_exchange,s_hash)        
+        content_tr = '%s有大额%s转入%s交易所，交易哈希为：%s'%(s_date,s_crypto,s_exchange,s_hash)
+        document.add_paragraph(content_tr,style = 'ListBullet')     
 zhuanzhang_df['date'] = zhuanzhang_df['date'].apply(lambda x:str(x))
-print(zhuanzhang_df)
+#print(zhuanzhang_df)
 t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
 hdr_cells = t.rows[0].cells
 hdr_cells[0].text = '时间' # 表头
@@ -1522,6 +1552,17 @@ document.add_picture('eth_fund.png',width = Inches(6.25))
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
 document.add_heading(u'8.USDT场外溢价率预测',level = 1)
+
+usdt_data = usdt_data.sort_values(by='date')
+usdt_data = usdt_data.reset_index(drop=True)
+
+usdt_price = usdt_data['usdt'][len(usdt_data)-1]
+usd_price = usdt_data['usd'][len(usdt_data)-1]
+usdt_per = usdt_data['per'][len(usdt_data)-1]
+document.add_paragraph('当前USD兑CNY价格为：%s'%(usd_price),style = 'ListBullet')
+document.add_paragraph('当前USDT场外兑CNY价格为：%s'%(usdt_price),style = 'ListBullet')
+document.add_paragraph('当前USDT场外溢价率为：%s'%(usdt_per),style = 'ListBullet')
+
 document.add_paragraph('注意红线只是未来24小时BTC价格变化趋势，其高低不代表实际能达到的价格。',style = 'ListBullet')
 # 添加图片，并指定宽度
 document.add_picture('future_24.png',width = Inches(6.25))
