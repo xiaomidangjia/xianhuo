@@ -1390,7 +1390,7 @@ document.add_paragraph(content_gox,style = 'ListBullet')
 # 添加图片，并指定宽度
 document.add_picture('US_MT.png',width = Inches(6.25))
 
-document.add_heading(u'今年美国政府转移BTC时间',level = 1)
+document.add_paragraph('今年美国政府转移BTC时间',style = 'ListBullet')
 t = document.add_table(rows=1, cols=3) # 插入表格，先将表头写好，参数：rows:行，cols:列
 hdr_cells = t.rows[0].cells
 hdr_cells[0].text = '时间' # 表头
