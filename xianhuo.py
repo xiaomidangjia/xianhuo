@@ -233,7 +233,7 @@ compare_data_1 = compare_data_1.reset_index(drop=True)
 compare_data_2 = compare_data_2.reset_index(drop=True)
 data_list = []
 date_list = []
-value = []
+value_simi = []
 for i in range(0,len(compare_data_2)-14):
     ins = list(compare_data_2['close'][i:i+14])
     data_list.append(ins)
@@ -241,8 +241,8 @@ for i in range(0,len(compare_data_2)-14):
     date_list.append(ins_date)
     p = stats.pearsonr(last_7day_price,ins)
     #print(p)
-    value.append(p[0])
-maxid = value.index(np.max(value))
+    value_simi.append(p[0])
+maxid = value_simi.index(np.max(value_simi))
 simi_date = date_list[maxid]
 simi_data = data_list[maxid]
 last_7day_data['Open'] = last_7day_data['open']
@@ -1360,7 +1360,7 @@ for d in news_df.values.tolist(): #
 # -----  120/200/4y 均线
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'6.BTC价格120d/200d/4y均线',level = 1)
+document.add_heading(u'2.BTC价格120d/200d/4y均线',level = 1)
 jun_df = jun_df.reset_index(drop=True)
 value_1 = jun_df['price_raw'][len(jun_df)-1]
 value_120 = jun_df['price_ma120'][len(jun_df)-1]
@@ -1375,6 +1375,8 @@ document.add_paragraph('昨日BTC收盘MA4Y价格为：%s'%(str(value_4y)),style
 document.add_picture('BTC价格120D.png',width = Inches(6.25))
 
 document.add_paragraph('历史相似行情',style = 'ListBullet')
+text = '%s至%s大饼价格走势与历史%s至%s大饼价格走势最相似，相似度为%s。'%(start_date,end_date,start_date_p,end_date_p,round(np.max(value_simi),2))
+document.add_paragraph(text,style = 'ListBullet')
 # 添加图片，并指定宽度
 document.add_picture('btc_simi.png',width = Inches(6.25))
 
@@ -1383,7 +1385,7 @@ document.add_picture('btc_simi.png',width = Inches(6.25))
 # -----  黑天鹅事件
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'2.黑天鹅事件监控',level = 1)
+document.add_heading(u'3.黑天鹅事件监控',level = 1)
 
 document.add_paragraph(content_us,style = 'ListBullet')
 document.add_paragraph(content_gox,style = 'ListBullet')
@@ -1411,7 +1413,7 @@ for d in last_data_us.values.tolist(): #
 # -----  链上大额转账监控
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'3.链上大额转账监控',level = 1)
+document.add_heading(u'4.链上大额转账监控',level = 1)
 
 sub_zhuanzhang_df_1 = zhuanzhang_df[(zhuanzhang_df.crypto.isin (['BTC','ETH'])) & (zhuanzhang_df.value>1000)]
 document.add_paragraph('大额BTC/ETH流入交易所是砸盘信号，大额USDT/USDC转入交易所是买盘信号。',style = 'ListBullet')
@@ -1462,7 +1464,7 @@ for d in zhuanzhang_df.values.tolist(): #
 # -----  链上稳定币监控
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'4.链上稳定币监控',level = 1)
+document.add_heading(u'5.链上稳定币监控',level = 1)
 
 document.add_paragraph('以下统计的稳定币包括USDT/USDC/BUSD/TUSD共四种',style = 'ListBullet')
 document.add_picture('BTC价格-稳定币发行总量.png',width = Inches(6.25))
@@ -1487,7 +1489,7 @@ for d in sub_all_stable_coin.values.tolist(): #
 # -----  美国重要经济数据公布日期
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'5.美国重要经济数据公布日期',level = 1)
+document.add_heading(u'6.美国重要经济数据公布日期',level = 1)
 
 document.add_paragraph('CME美联储加息预测：https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html',style = 'ListBullet')
 if len(sub_us_eco_df) == 0:
