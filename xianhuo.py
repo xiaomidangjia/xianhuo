@@ -222,6 +222,7 @@ res_data['judge'] = res_data['date'].apply(lambda x:cal_w(x))
 #res_data = res_data[res_data.judge==1]
 res_data = res_data.sort_values(by=['date'])
 res_data = res_data.reset_index(drop=True)  
+zhangdiefu = res_data
 from scipy import stats
 #只和同一阶段内的数据比较，现在是萧条期，只和历史的萧条期比较
 last_7day_data = res_data[-14:]
@@ -1328,15 +1329,15 @@ document = Document()
 document.add_heading(u'%s日BTC现货策略数据'%(str(date_now)[0:10]),0)
 # 添加有序列表
 document.add_paragraph('昨日重要新闻一览',style = 'ListBullet')
-document.add_paragraph('BTC价格回顾',style = 'ListBullet')
+document.add_paragraph('BTC价格收盘回顾',style = 'ListBullet')
 document.add_paragraph('黑天鹅事件监控',style = 'ListBullet')
 document.add_paragraph('链上大额转账监控',style = 'ListBullet')
 document.add_paragraph('链上稳定币监控',style = 'ListBullet')
 document.add_paragraph('美国重要经济数据公布日期',style = 'ListBullet')
 document.add_paragraph('聪明钱地址监控',style = 'ListBullet')
 document.add_paragraph('USDT场外溢价率预测',style = 'ListBullet')
-document.add_paragraph('链上行情短期指标',style = 'ListBullet')
-document.add_paragraph('链上行情长期指标',style = 'ListBullet')
+document.add_paragraph('短期行情链上指标',style = 'ListBullet')
+document.add_paragraph('长期行情链上指标',style = 'ListBullet')
 
 document.add_paragraph('MMC研究猿0xCarson',style = 'ListBullet')
 
@@ -1360,14 +1361,18 @@ for d in news_df.values.tolist(): #
 # -----  120/200/4y 均线
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'2.BTC价格120d/200d/4y均线',level = 1)
+document.add_heading(u'2.BTC价格收盘回顾',level = 1)
 jun_df = jun_df.reset_index(drop=True)
 value_1 = jun_df['price_raw'][len(jun_df)-1]
 value_120 = jun_df['price_ma120'][len(jun_df)-1]
 value_200 = jun_df['price_ma200'][len(jun_df)-1]
 value_4y = jun_df['price_ma4y'][len(jun_df)-1]
 
+btc_zhangdiefu = (zhangdiefu['close'][len(zhangdiefu)-1] - zhangdiefu['open'][len(zhangdiefu)-1])/zhangdiefu['open'][len(zhangdiefu)-1]
+
+
 document.add_paragraph('昨日BTC收盘价格为：%s'%(str(value_1)),style = 'ListBullet')
+document.add_paragraph('昨日BTC涨幅为：%s'%(str(btc_zhangdiefu)),style = 'ListBullet')
 document.add_paragraph('昨日BTC收盘MA120价格为：%s'%(str(value_120)),style = 'ListBullet')
 document.add_paragraph('昨日BTC收盘MA200价格为：%s'%(str(value_200)),style = 'ListBullet')
 document.add_paragraph('昨日BTC收盘MA4Y价格为：%s'%(str(value_4y)),style = 'ListBullet')
@@ -1573,7 +1578,7 @@ document.add_picture('future_24.png',width = Inches(6.25))
 # ----- 短期链上指标
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'9.行情链上短期指标',level = 1)
+document.add_heading(u'9.短期行情链上指标',level = 1)
 
 
 res_df = res_df.reset_index(drop=True)
@@ -1594,7 +1599,7 @@ document.add_picture('7MA_aSOPR.png',width = Inches(5.25))
 # ----- 长期链上指标
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'10.行情链上长期指标',level = 1)
+document.add_heading(u'10.长期行情链上指标',level = 1)
 
 pm_v = res_df['Puell Multiple'][len(res_df)-1]
 mvrv_v = res_df['MVRV Z-Score'][len(res_df)-1]
