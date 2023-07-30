@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import hashlib
 import random
+from PIL import Image, ImageDraw, ImageFont
+import cv2
 
 # ======= 正式开始执行
 prop = fm.FontProperties(fname='/root/xianhuo/SimHei.ttf')
