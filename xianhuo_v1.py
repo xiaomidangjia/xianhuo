@@ -17,6 +17,21 @@ import random
 from PIL import Image, ImageDraw, ImageFont
 import cv2
 
+
+def jigsaw(imgs, direction, gap=0):
+    imgs = [Image.fromarray(img) for img in imgs]
+    w, h = imgs[0].size
+    if direction == "horizontal":
+        result = Image.new(imgs[0].mode, ((w+gap)*len(imgs)-gap, h))
+        for i, img in enumerate(imgs):
+            result.paste(img, box=((w+gap)*i, 0))
+    elif direction == "vertical":
+        result = Image.new(imgs[0].mode, (w, (h+gap)*len(imgs)-gap))
+        for i, img in enumerate(imgs):
+            result.paste(img, box=(0, (h+gap)*i))
+    else:
+        raise ValueError("The direction parameter has only two options: horizontal and vertical")
+    return np.array(result)
 # ======= 正式开始执行
 prop = fm.FontProperties(fname='/root/xianhuo/SimHei.ttf')
 #pip install jojo-office
