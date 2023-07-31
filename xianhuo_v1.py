@@ -1133,7 +1133,7 @@ value_120 = jun_df['price_ma120'][len(jun_df)-1]
 value_200 = jun_df['price_ma200'][len(jun_df)-1]
 value_4y = jun_df['price_ma4y'][len(jun_df)-1]
 
-btc_zhangdiefu = round( ((zhangdiefu['close'][len(zhangdiefu)-2] - zhangdiefu['open'][len(zhangdiefu)-2])/zhangdiefu['open'][len(zhangdiefu)-2])*100,2)
+btc_zhangdiefu = round( ((price_data['close'][len(price_data)-2] - price_data['close'][len(price_data)-3])/price_data['close'][len(price_data)-3])*100,2)
 btc_zhangdiefu_1 = str(btc_zhangdiefu)+'%'
 
 document.add_paragraph('昨日BTC收盘价格为：%s'%(str(value_1)),style = 'ListBullet')
