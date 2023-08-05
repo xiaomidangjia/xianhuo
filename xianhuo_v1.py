@@ -180,7 +180,7 @@ miner_data = miner_data_1.merge(price_data,how='left',on=['date'])
 
 f, axes = plt.subplots(figsize=(20, 10))
 axes_fu = axes.twinx()
-sns.lineplot(x="date", y="value",color='red',data=miner_data, ax=axes_fu)
+sns.lineplot(x="date", y="miner_raw",color='red',data=miner_data, ax=axes_fu)
 sns.lineplot(x="date", y="close",color='black', data=miner_data, ax=axes)
 axes.tick_params(labelsize=10)
 plt.title('Miner To Exhanges', fontsize=10) 
@@ -235,7 +235,7 @@ for j in range(30,len(miner_data)+1):
     ins = ins.reset_index(drop=True)
     date.append(ins['date'][29])
     whale_raw.append(ins['value'][29])
-whale_data_1 = pd.DataFrame({'date':date,'miner_raw':miner_raw})
+whale_data_1 = pd.DataFrame({'date':date,'whale_raw':whale_raw})
 whale_data_1 = whale_data_1[(whale_data_1.date>='2019-01-01')]
 
 
@@ -244,7 +244,7 @@ whale_data = whale_data_1.merge(price_data,how='left',on=['date'])
 
 f, axes = plt.subplots(figsize=(20, 10))
 axes_fu = axes.twinx()
-sns.lineplot(x="date", y="value",color='red',data=whale_data, ax=axes_fu)
+sns.lineplot(x="date", y="whale_raw",color='red',data=whale_data, ax=axes_fu)
 sns.lineplot(x="date", y="close",color='black', data=whale_data, ax=axes)
 axes.tick_params(labelsize=10)
 plt.title('Whale To Exhanges', fontsize=10) 
