@@ -1582,7 +1582,7 @@ for d in res_df_all.values.tolist(): #
         row_cells[4].text = str(ordi)
 
 # 保存文档
-document.save('BTC现货策略数据.doc')
+document.save('btc.doc')
 
 
 #======自动发邮件
@@ -1625,7 +1625,7 @@ def mail():
     # 邮箱正文内容，第一个参数为内容，第二个参数为格式(plain为纯文本)，第三个参数为编码。
     msg.attach(MIMEText(main_body,'plain','utf-8'))
     # 以二进制只读模式打开word文档。
-    with open('BTC现货策略数据','rb') as docs_file:
+    with open('btc.doc','rb') as docs_file:
         # read()方法用于从文件读取指定的字节数，如果未给定或为负则读取所有。
         # MIMEApplication()构造方法创建附件对象。
         docs_part=MIMEApplication(docs_file.read())
