@@ -229,8 +229,8 @@ whale_data = whale_data.merge(price_data,how='left',on=['date'])
 
 date = []
 whale_raw = []
-for j in range(30,len(miner_data)+1):
-    ins = miner_data[j-30:j]
+for j in range(30,len(whale_data)+1):
+    ins = whale_data[j-30:j]
     ins = ins.sort_values(by='date')
     ins = ins.reset_index(drop=True)
     date.append(ins['date'][29])
