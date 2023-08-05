@@ -773,6 +773,7 @@ while logo ==0:
     try:
         response = session.get(url)
         data = json.loads(response.text)
+        print(data)
         date = []
         ba = []
         for i in range(len(data['data'])):
@@ -1368,11 +1369,11 @@ value_120 = jun_df['price_ma120'][len(jun_df)-1]
 value_200 = jun_df['price_ma200'][len(jun_df)-1]
 value_4y = jun_df['price_ma4y'][len(jun_df)-1]
 
-btc_zhangdiefu = (zhangdiefu['close'][len(zhangdiefu)-1] - zhangdiefu['open'][len(zhangdiefu)-1])/zhangdiefu['open'][len(zhangdiefu)-1]
+btc_zhangdiefu = round( ((zhangdiefu['close'][len(zhangdiefu)-1] - zhangdiefu['open'][len(zhangdiefu)-1])/zhangdiefu['open'][len(zhangdiefu)-1])*100,2)
 
 
 document.add_paragraph('昨日BTC收盘价格为：%s'%(str(value_1)),style = 'ListBullet')
-document.add_paragraph('昨日BTC涨幅为：%s'%(str(btc_zhangdiefu)),style = 'ListBullet')
+document.add_paragraph('昨日BTC涨幅为：%s'%(str(btc_zhangdiefu)+'%'),style = 'ListBullet')
 document.add_paragraph('昨日BTC收盘MA120价格为：%s'%(str(value_120)),style = 'ListBullet')
 document.add_paragraph('昨日BTC收盘MA200价格为：%s'%(str(value_200)),style = 'ListBullet')
 document.add_paragraph('昨日BTC收盘MA4Y价格为：%s'%(str(value_4y)),style = 'ListBullet')

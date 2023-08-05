@@ -133,6 +133,132 @@ plt.savefig('btc_dominance.png')
 plt.close()
 
 
+# ----- 矿工
+url_address = ['https://api.glassnode.com/v1/metrics/transactions/transfers_volume_miners_to_exchanges']
+url_name = ['k_fold']
+# insert your API key here
+API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
+data_list = []
+for num in range(len(url_name)):
+    print(num)
+    addr = url_address[num]
+    name = url_name[num]
+    # make API request
+    res_addr = requests.get(addr,params={'a': 'BTC', 'api_key': API_KEY})
+    # convert to pandas dataframe
+    ins = pd.read_json(res_addr.text, convert_dates=['t'])
+    #ins.to_csv('test.csv')
+    #print(ins['o'])
+    ins['date'] =  ins['t']
+    ins['value'] =  ins['v']
+    ins = ins[['date','value']]
+    data_list.append(ins)
+result_data = data_list[0][['date']]
+for i in range(len(data_list)):
+    df = data_list[i]
+    result_data = result_data.merge(df,how='left',on='date')
+#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
+miner_data = result_data[(result_data.date>='2013-01-01')]
+miner_data = miner_data.sort_values(by=['date'])
+miner_data = miner_data.reset_index(drop=True)
+
+
+date = []
+miner_raw = []
+for j in range(20,len(miner_data)+1):
+    ins = miner_data[j-14:j]
+    ins = ins.sort_values(by='date')
+    ins = ins.reset_index(drop=True)
+    date.append(ins['date'][13])
+    miner_raw.append(ins['value'][13])
+miner_data_1 = pd.DataFrame({'date':date,'miner_raw':miner_raw})
+miner_data_1 = miner_data_1[(miner_data_1.date>='2019-01-01')]
+
+
+miner_data = miner_data_1.merge(price_data,how='left',on=['date'])
+
+
+f, axes = plt.subplots(figsize=(20, 10))
+axes_fu = axes.twinx()
+sns.lineplot(x="date", y="value",color='red',data=miner_data, ax=axes_fu)
+sns.lineplot(x="date", y="close",color='black', data=miner_data, ax=axes)
+axes.tick_params(labelsize=10)
+plt.title('Miner To Exhanges', fontsize=10) 
+axes.legend(loc='upper left', fontsize=5)
+axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
+axes.set_ylabel("BTC price",fontsize=10)
+axes_fu.set_ylabel("BTC Volume",fontsize=10)
+
+#plt.show()
+plt.savefig('btc_miner_v.png')
+plt.close()
+
+
+
+
+# ----- 巨鲸
+url_address = [ 'https://api.glassnode.com/v1/metrics/transactions/transfers_volume_whales_to_exchanges_sum']
+url_name = ['k_fold']
+# insert your API key here
+API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
+data_list = []
+for num in range(len(url_name)):
+    print(num)
+    addr = url_address[num]
+    name = url_name[num]
+    # make API request
+    res_addr = requests.get(addr,params={'a': 'BTC', 'api_key': API_KEY})
+    # convert to pandas dataframe
+    ins = pd.read_json(res_addr.text, convert_dates=['t'])
+    #ins.to_csv('test.csv')
+    #print(ins['o'])
+    ins['date'] =  ins['t']
+    ins['value'] =  ins['v']
+    ins = ins[['date','value']]
+    data_list.append(ins)
+result_data = data_list[0][['date']]
+for i in range(len(data_list)):
+    df = data_list[i]
+    result_data = result_data.merge(df,how='left',on='date')
+#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
+whale_data = result_data[(result_data.date>='2013-01-01')]
+whale_data = whale_data.sort_values(by=['date'])
+whale_data = whale_data.reset_index(drop=True)
+whale_data = whale_data.merge(price_data,how='left',on=['date'])
+
+
+date = []
+whale_raw = []
+for j in range(30,len(miner_data)+1):
+    ins = miner_data[j-30:j]
+    ins = ins.sort_values(by='date')
+    ins = ins.reset_index(drop=True)
+    date.append(ins['date'][29])
+    whale_raw.append(ins['value'][29])
+whale_data_1 = pd.DataFrame({'date':date,'miner_raw':miner_raw})
+whale_data_1 = whale_data_1[(whale_data_1.date>='2019-01-01')]
+
+
+whale_data = whale_data_1.merge(price_data,how='left',on=['date'])
+
+
+f, axes = plt.subplots(figsize=(20, 10))
+axes_fu = axes.twinx()
+sns.lineplot(x="date", y="value",color='red',data=whale_data, ax=axes_fu)
+sns.lineplot(x="date", y="close",color='black', data=whale_data, ax=axes)
+axes.tick_params(labelsize=10)
+plt.title('Whale To Exhanges', fontsize=10) 
+axes.legend(loc='upper left', fontsize=5)
+axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
+axes.set_ylabel("BTC price",fontsize=10)
+axes_fu.set_ylabel("Whale Volume",fontsize=10)
+
+#plt.show()
+plt.savefig('btc_whale_v.png')
+plt.close()
+
+
+
 # ---- btc净流入交易所
 
 url_address = [ 'https://api.glassnode.com/v1/metrics/transactions/transfers_volume_exchanges_net']
@@ -1142,14 +1268,15 @@ document.add_paragraph('昨日BTC收盘MA120价格为：%s'%(str(value_120)),sty
 document.add_paragraph('昨日BTC收盘MA200价格为：%s'%(str(value_200)),style = 'ListBullet')
 document.add_paragraph('昨日BTC收盘MA4Y价格为：%s'%(str(value_4y)),style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('BTC价格120D.png',width = Inches(6.25))
+document.add_picture('BTC价格120D.png',width = Inches(5.25))
 
 document.add_paragraph('BTC市值占比',style = 'ListBullet')
+document.add_paragraph('牛市要启动，比特币市值占比至少要高于50%。',style = 'ListBullet')
 btc_dominance = str(domain_data['value'][len(domain_data)-1]) + '%'
 text = '今日BTC市值占比为：%s。'%(btc_dominance)
 document.add_paragraph(text,style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('btc_dominance.png',width = Inches(6.25))
+document.add_picture('btc_dominance.png',width = Inches(5.25))
 
 document.add_paragraph('交易所比特币净流入量',style = 'ListBullet')
 jinliuru_data = jinliuru_data.reset_index(drop=True)
@@ -1158,7 +1285,25 @@ btc_netflow = jinliuru_data['value'][len(jinliuru_data)-1]
 text = '昨日交易所比特币净流入量为：%s。'%(btc_netflow)
 document.add_paragraph(text,style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('btc_netflow_price.png',width = Inches(6.25))
+document.add_picture('btc_netflow_price.png',width = Inches(5.25))
+
+document.add_paragraph('近14日矿工每日平均流入交易所比特币量',style = 'ListBullet')
+miner_data = miner_data.reset_index(drop=True)
+
+miner_netflow = miner_data['value'][len(miner_data)-1]
+text = '昨日矿工流入交易所比特币量为：%s。'%(miner_netflow)
+document.add_paragraph(text,style = 'ListBullet')
+# 添加图片，并指定宽度
+document.add_picture('btc_miner_v.png',width = Inches(5.25))
+
+document.add_paragraph('近30日巨鲸每日平均流入交易所比特币量',style = 'ListBullet')
+whale_data = whale_data.reset_index(drop=True)
+
+whale_netflow = whale_data['value'][len(whale_data)-1]
+text = '昨日巨鲸流入交易所比特币量为：%s。'%(whale_netflow)
+document.add_paragraph(text,style = 'ListBullet')
+# 添加图片，并指定宽度
+document.add_picture('btc_whale_v.png',width = Inches(5.25))
 
 
 # -----  链上稳定币监控
@@ -1167,7 +1312,7 @@ document.add_page_break()
 document.add_heading(u'2.链上稳定币监控',level = 1)
 
 document.add_paragraph('以下统计的稳定币包括USDT/USDC/BUSD/TUSD共四种',style = 'ListBullet')
-document.add_picture('BTC价格-稳定币发行总量.png',width = Inches(6.25))
+document.add_picture('BTC价格-稳定币发行总量.png',width = Inches(6))
 
 document.add_paragraph('近7日稳定币总量值',style = 'ListBullet')
 all_stable_coin = all_stable_coin[['date','Toal Supply']]
@@ -1187,7 +1332,7 @@ for d in sub_all_stable_coin.values.tolist(): #
         row_cells[1].text = str(round(Supply,2))
         
 #usdt的溢价率
-document.add_paragraph('USDT场外溢价率预测',style = 'ListBullet')
+document.add_paragraph('USDT场外溢价率监控',style = 'ListBullet')
 #p = document.add_paragraph('This is a paragraph in new page.')
 
 usdt_data = usdt_data.sort_values(by='date')
@@ -1207,7 +1352,7 @@ usdt_netflow = u_jinliuru_data['value'][len(u_jinliuru_data)-1]
 text = '昨日交易所USDT净流入量为：%s。'%(usdt_netflow)
 document.add_paragraph(text,style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('usdt_netflow_price.png',width = Inches(6.25))
+document.add_picture('usdt_netflow_price.png',width = Inches(5.25))
 
 
 # ----- 重要链上指标
@@ -1337,7 +1482,7 @@ document.add_heading(u'5.黑天鹅事件监控',level = 1)
 document.add_paragraph(content_us,style = 'ListBullet')
 document.add_paragraph(content_gox,style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('US_MT.png',width = Inches(6.25))
+document.add_picture('US_MT.png',width = Inches(5.25))
 
 document.add_paragraph('今年美国政府转移BTC时间',style = 'ListBullet')
 t = document.add_table(rows=1, cols=3) # 插入表格，先将表头写好，参数：rows:行，cols:列
@@ -1397,7 +1542,7 @@ document.add_heading(u'附录',level = 1)
 per_1 = combine_data['per'][len(combine_data)-1]
 document.add_paragraph('ETH Price/BTC Price',style = 'ListBullet')
 document.add_paragraph('当前该比值为：%s'%(per_1),style = 'ListBullet')
-document.add_picture('eth_btc.png',width = Inches(6.25))
+document.add_picture('eth_btc.png',width = Inches(5.25))
 '''
 document.add_paragraph('山寨币',style = 'ListBullet')
 t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
@@ -1437,4 +1582,4 @@ for d in res_df_all.values.tolist(): #
         row_cells[4].text = str(ordi)
 
 # 保存文档
-document.save('BTC现货策略数据.doc')
+document.save('%sBTC现货策略数据.doc'%(str(date_now)[0:10]))
