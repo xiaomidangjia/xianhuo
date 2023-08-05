@@ -1290,7 +1290,7 @@ document.add_picture('btc_netflow_price.png',width = Inches(5.25))
 document.add_paragraph('近14日矿工每日平均流入交易所比特币量',style = 'ListBullet')
 miner_data = miner_data.reset_index(drop=True)
 
-miner_netflow = miner_data['value'][len(miner_data)-1]
+miner_netflow = miner_data['miner_raw'][len(miner_data)-1]
 text = '昨日矿工流入交易所比特币量为：%s。'%(miner_netflow)
 document.add_paragraph(text,style = 'ListBullet')
 # 添加图片，并指定宽度
@@ -1299,7 +1299,7 @@ document.add_picture('btc_miner_v.png',width = Inches(5.25))
 document.add_paragraph('近30日巨鲸每日平均流入交易所比特币量',style = 'ListBullet')
 whale_data = whale_data.reset_index(drop=True)
 
-whale_netflow = whale_data['value'][len(whale_data)-1]
+whale_netflow = whale_data['whale_raw'][len(whale_data)-1]
 text = '昨日巨鲸流入交易所比特币量为：%s。'%(whale_netflow)
 document.add_paragraph(text,style = 'ListBullet')
 # 添加图片，并指定宽度
