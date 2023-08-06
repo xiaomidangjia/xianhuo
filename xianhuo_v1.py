@@ -236,7 +236,7 @@ for j in range(30,len(whale_data)+1):
     ins = ins.sort_values(by='date')
     ins = ins.reset_index(drop=True)
     date.append(ins['date'][29])
-    whale_raw.append(np.means(ins['value']))
+    whale_raw.append(np.mean(ins['value']))
 whale_data_1 = pd.DataFrame({'date':date,'whale_raw':whale_raw})
 whale_data_1 = whale_data_1[(whale_data_1.date>='2019-01-01')]
 
