@@ -16,7 +16,7 @@ import hashlib
 import random
 from PIL import Image, ImageDraw, ImageFont
 import cv2
-
+from watermarker.marker import add_mark
 
 def jigsaw(imgs, direction, gap=0):
     imgs = [Image.fromarray(img) for img in imgs]
@@ -131,6 +131,7 @@ axes_fu.set_ylabel("BTC Dominance",fontsize=10)
 #plt.show()
 plt.savefig('btc_dominance.png')
 plt.close()
+add_mark(file = "btc_dominance.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 
 # ----- 矿工
@@ -193,6 +194,7 @@ axes_fu.set_ylabel("BTC Volume",fontsize=10)
 plt.savefig('btc_miner_v.png')
 plt.close()
 
+add_mark(file = "btc_miner_v.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 
 
@@ -256,6 +258,8 @@ axes_fu.set_ylabel("Whale Volume",fontsize=10)
 #plt.show()
 plt.savefig('btc_whale_v.png')
 plt.close()
+add_mark(file = "btc_whale_v.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
+
 
 
 
@@ -301,6 +305,7 @@ axes.set_ylabel("Netflow",fontsize=10)
 #plt.show()
 plt.savefig('btc_netflow.png')
 plt.close()
+add_mark(file = "btc_netflow.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 f, axes = plt.subplots(figsize=(20, 10))
 #sns.barplot(x="date", y="value",data=jinliuru_data, ax=axes)
@@ -320,6 +325,7 @@ img2 = cv2.imread("btc_netflow.png")
 img = jigsaw([img1, img2],direction="vertical")
 name = 'btc_netflow_price.png'
 cv2.imwrite(name, img)
+add_mark(file = "btc_netflow_price.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 
 
@@ -382,6 +388,7 @@ img2 = cv2.imread("usdt_netflow.png")
 img = jigsaw([img1, img2],direction="vertical")
 name = 'usdt_netflow_price.png'
 cv2.imwrite(name, img)
+add_mark(file = "usdt_netflow_price.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 # btc_risk_index
 url_address = [ 'https://api.glassnode.com/v1/metrics/signals/btc_risk_index']
@@ -427,6 +434,7 @@ axes.set_ylabel("INDEX",fontsize=10)
 #plt.show()
 plt.savefig('risk_index.png')
 plt.close()
+add_mark(file = "risk_index.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 
 # ----- 基础btc数据
@@ -475,6 +483,8 @@ axes.set_ylabel("STH-NUPL",fontsize=10)
 #plt.show()
 plt.savefig('sth_nupl.png')
 plt.close()
+add_mark(file = "sth_nupl.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
+
 # =======================================================================黑天鹅地址监控===================================================================
 
 url_address = [ 'https://api.glassnode.com/v1/metrics/distribution/balance_us_government','https://api.glassnode.com/v1/metrics/distribution/balance_mtgox_trustee','https://api.glassnode.com/v1/metrics/market/price_usd_close']
@@ -551,6 +561,7 @@ axes_fu.set_ylabel("持有BTC总量",fontsize=14,fontproperties=prop)
 plt.savefig('US_MT.png',  bbox_inches='tight')
 plt.close()
 
+add_mark(file = "US_MT.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 
 
@@ -692,6 +703,7 @@ axes_fu.set_ylabel("发行总量",fontsize=14,fontproperties=prop)
 plt.savefig('BTC价格-稳定币发行总量.png',  bbox_inches='tight')
 plt.close()
 
+add_mark(file = "BTC价格-稳定币发行总量.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 
 # =======================================================================美国经济数据===================================================================
@@ -757,6 +769,7 @@ axes.set_ylabel("BTC价格",fontsize=14,fontproperties=prop)
 plt.savefig('BTC价格120D.png',  bbox_inches='tight')
 plt.close()
 
+add_mark(file = "BTC价格120D.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 
 
@@ -965,6 +978,7 @@ plt.title('每日aSOPR值', fontsize=20,fontproperties=prop)
 plt.savefig('aSOPR.png') 
 plt.close()
 
+add_mark(file = "aSOPR.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 # --- 7ma asopr
 f, axes = plt.subplots(figsize=(20, 10))
@@ -982,6 +996,7 @@ axes_fu.set_ylabel("7MA aSOPR",fontsize=10)
 plt.savefig('7MA_aSOPR.png') 
 plt.close()
 
+add_mark(file = "7MA_aSOPR.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 # --- mvrv
 f, axes = plt.subplots(figsize=(20, 10))
@@ -999,6 +1014,8 @@ axes_fu.set_ylabel("MVRV Z-Score",fontsize=10)
 
 plt.savefig('MVRV_Z_Score.png') 
 plt.close()
+add_mark(file = "MVRV_Z_Score.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
+
 # --- pm
 f, axes = plt.subplots(figsize=(20, 10))
 axes_fu = axes.twinx()
@@ -1017,6 +1034,8 @@ axes_fu.set_ylabel("Puell Multiple",fontsize=10)
 #plt.show()
 plt.savefig('Puell.png')
 plt.close()
+add_mark(file = "Puell.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
+
 # --- rhold
 f, axes = plt.subplots(figsize=(20, 10))
 axes_fu = axes.twinx()
@@ -1035,6 +1054,7 @@ axes_fu.set_ylabel("log(RHODL Ratio)",fontsize=10)
 #plt.show()
 plt.savefig('RHODL.png')
 plt.close()
+add_mark(file = "RHODL.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 # --- supply
 
@@ -1054,6 +1074,7 @@ axes_fu.set_ylabel("Percent Supply in Profit",fontsize=10)
 #plt.show()
 plt.savefig('Percent_Supply.png')
 plt.close()
+add_mark(file = "Percent_Supply.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 # ========================================================================附录=========================================================================
 url_address = ['https://api.glassnode.com/v1/metrics/market/price_usd_close']
@@ -1122,6 +1143,7 @@ axes_fu.set_ylabel("ETH Price/BTC Price",fontsize=10)
 #plt.show()
 plt.savefig('eth_btc.png')
 plt.close()
+add_mark(file = "eth_btc.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 
 # meme币
@@ -1268,7 +1290,7 @@ document.add_paragraph('昨日BTC收盘MA120价格为：%s'%(str(value_120)),sty
 document.add_paragraph('昨日BTC收盘MA200价格为：%s'%(str(value_200)),style = 'ListBullet')
 document.add_paragraph('昨日BTC收盘MA4Y价格为：%s'%(str(value_4y)),style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('BTC价格120D.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/BTC价格120D.png',width = Inches(5.25))
 
 document.add_paragraph('BTC市值占比',style = 'ListBullet')
 document.add_paragraph('牛市要启动，比特币市值占比至少要高于50%。',style = 'ListBullet')
@@ -1276,7 +1298,7 @@ btc_dominance = str(domain_data['value'][len(domain_data)-1]) + '%'
 text = '今日BTC市值占比为：%s。'%(btc_dominance)
 document.add_paragraph(text,style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('btc_dominance.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/btc_dominance.png',width = Inches(5.25))
 
 document.add_paragraph('交易所比特币净流入量',style = 'ListBullet')
 jinliuru_data = jinliuru_data.reset_index(drop=True)
@@ -1285,7 +1307,7 @@ btc_netflow = jinliuru_data['value'][len(jinliuru_data)-1]
 text = '昨日交易所比特币净流入量为：%s。'%(btc_netflow)
 document.add_paragraph(text,style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('btc_netflow_price.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/btc_netflow_price.png',width = Inches(5.25))
 
 document.add_paragraph('近14日矿工每日平均流入交易所比特币量',style = 'ListBullet')
 miner_data = miner_data.reset_index(drop=True)
@@ -1294,7 +1316,7 @@ miner_netflow = miner_data['miner_raw'][len(miner_data)-1]
 text = '昨日矿工流入交易所比特币量为：%s。'%(miner_netflow)
 document.add_paragraph(text,style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('btc_miner_v.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/btc_miner_v.png',width = Inches(5.25))
 
 document.add_paragraph('近30日巨鲸每日平均流入交易所比特币量',style = 'ListBullet')
 whale_data = whale_data.reset_index(drop=True)
@@ -1303,7 +1325,7 @@ whale_netflow = whale_data['whale_raw'][len(whale_data)-1]
 text = '昨日巨鲸流入交易所比特币量为：%s。'%(whale_netflow)
 document.add_paragraph(text,style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('btc_whale_v.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/btc_whale_v.png',width = Inches(5.25))
 
 
 # -----  链上稳定币监控
@@ -1312,7 +1334,7 @@ document.add_page_break()
 document.add_heading(u'2.链上稳定币监控',level = 1)
 
 document.add_paragraph('以下统计的稳定币包括USDT/USDC/BUSD/TUSD共四种',style = 'ListBullet')
-document.add_picture('BTC价格-稳定币发行总量.png',width = Inches(6))
+document.add_picture('/root/xianhuo/out/BTC价格-稳定币发行总量.png',width = Inches(6))
 
 document.add_paragraph('近7日稳定币总量值',style = 'ListBullet')
 all_stable_coin = all_stable_coin[['date','Toal Supply']]
@@ -1352,7 +1374,7 @@ usdt_netflow = u_jinliuru_data['value'][len(u_jinliuru_data)-1]
 text = '昨日交易所USDT净流入量为：%s。'%(usdt_netflow)
 document.add_paragraph(text,style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('usdt_netflow_price.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/usdt_netflow_price.png',width = Inches(5.25))
 
 
 # ----- 重要链上指标
@@ -1370,25 +1392,25 @@ sopr_7v = res_df['7MA aSOPR'][len(res_df)-1]
 document.add_paragraph('aSOPR',style = 'ListBullet')
 document.add_paragraph('当aSOPR值大于1时，说明BTC全网持有者总体处于盈利状态，当其小于1时，说明总体处于亏损状态，在目前市场状态下是看涨信号,可以少量现货进入。',style = 'ListBullet')
 document.add_paragraph('昨日收盘值为：%s'%(asopr_v),style = 'ListBullet')
-document.add_picture('aSOPR.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/aSOPR.png',width = Inches(5.25))
 
 
 document.add_paragraph('7MA aSOPR',style = 'ListBullet')
 document.add_paragraph('当7MA aSOPR值大于1时，说明BTC全网持有者总体处于盈利状态，当其小于1时，说明总体处于亏损状态，在目前市场状态下是可以开启定投。',style = 'ListBullet')
 document.add_paragraph('昨日收盘值为：%s'%(sopr_7v),style = 'ListBullet')
-document.add_picture('7MA_aSOPR.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/7MA_aSOPR.png',width = Inches(5.25))
 
 document.add_paragraph('BTC RISK INDEX',style = 'ListBullet')
 risk_data = risk_data.reset_index(drop=True)
 risk = risk_data['value'][len(risk_data)-1]
 document.add_paragraph('昨日收盘值为：%s'%(risk),style = 'ListBullet')
-document.add_picture('risk_index.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/risk_index.png',width = Inches(5.25))
 
 document.add_paragraph('Entity-Adjusted STH-NUPL',style = 'ListBullet')
 nupl_data = nupl_data.reset_index(drop=True)
 nupl = nupl_data['value'][len(nupl_data)-1]
 document.add_paragraph('昨日收盘值为：%s'%(nupl),style = 'ListBullet')
-document.add_picture('sth_nupl.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/sth_nupl.png',width = Inches(5.25))
 
 
 
@@ -1403,22 +1425,22 @@ rhodl_v = res_df['RHODL Ratio'][len(res_df)-1]
 document.add_paragraph('MVRV Z-Score',style = 'ListBullet')
 document.add_paragraph('当MVRV Z-Score值大于7时，是牛顶信号，当其小于0时，是熊底信号。',style = 'ListBullet')      
 document.add_paragraph('昨日收盘值为：%s'%(mvrv_v),style = 'ListBullet')
-document.add_picture('MVRV_Z_Score.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/MVRV_Z_Score.png',width = Inches(5.25))
 
 document.add_paragraph('Puell Multiple',style = 'ListBullet')
 document.add_paragraph('当Puell Multiple值大于4时，是牛顶信号，当其小于0.5时，是熊底信号。',style = 'ListBullet')
 document.add_paragraph('昨日收盘值为：%s'%(pm_v),style = 'ListBullet')
-document.add_picture('Puell.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/Puell.png',width = Inches(5.25))
 
 document.add_paragraph('Percent Supply in Profit',style = 'ListBullet')
 document.add_paragraph('当Percent Supply in Profit值大于0.95时，是牛顶信号，当其小于0.5时，是熊底信号。',style = 'ListBullet')
 document.add_paragraph('昨日收盘值为：%s'%(supply_v),style = 'ListBullet')
-document.add_picture('Percent_Supply.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/Percent_Supply.png',width = Inches(5.25))
 
 document.add_paragraph('RHODL Ratio',style = 'ListBullet')
 document.add_paragraph('当RHODL Ratio值大于49000时，是牛顶信号，当其小于350时，是熊底信号。',style = 'ListBullet')
 document.add_paragraph('昨日收盘值为：%s'%(rhodl_v),style = 'ListBullet')
-document.add_picture('RHODL.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/RHODL.png',width = Inches(5.25))
 
 
 # -----  链上大额转账监控
@@ -1482,7 +1504,7 @@ document.add_heading(u'5.黑天鹅事件监控',level = 1)
 document.add_paragraph(content_us,style = 'ListBullet')
 document.add_paragraph(content_gox,style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('US_MT.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/US_MT.png',width = Inches(5.25))
 
 document.add_paragraph('今年美国政府转移BTC时间',style = 'ListBullet')
 t = document.add_table(rows=1, cols=3) # 插入表格，先将表头写好，参数：rows:行，cols:列
@@ -1542,7 +1564,7 @@ document.add_heading(u'附录',level = 1)
 per_1 = combine_data['per'][len(combine_data)-1]
 document.add_paragraph('ETH Price/BTC Price',style = 'ListBullet')
 document.add_paragraph('当前该比值为：%s'%(per_1),style = 'ListBullet')
-document.add_picture('eth_btc.png',width = Inches(5.25))
+document.add_picture('/root/xianhuo/out/eth_btc.png',width = Inches(5.25))
 '''
 document.add_paragraph('山寨币',style = 'ListBullet')
 t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
@@ -1615,7 +1637,7 @@ def mail():
     # 定义邮件头信息。发件人、收件人、邮件主题。
     msg['From']=sender
     msg['To']=receiver[0]
-    subject=f'MMC研究猿---{data_value}'
+    subject=f'{data_value}MMC研究猿比特币现货报告'
     # 为msg对象的Subject属性赋值。
     # 实例化了一个Header邮件头对象，并赋值给msg对象的Subject属性。
     msg['Subject']=Header(subject,'utf-8')
