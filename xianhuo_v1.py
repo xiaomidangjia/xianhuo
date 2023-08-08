@@ -1626,7 +1626,7 @@ sender ='lee_daowei@163.com'
 # 发件邮箱开启SMTP服务生成的授权码。
 pwd = 'GKXGKVGTYBGRMAVE'
 # 收件邮箱账号。
-receiver=['lee_daowei@163.com','peng_6149@163.com','2953231494@qq.com']
+receiver=['lee_daowei@163.com','peng_6149@163.com','2953231494@qq.com','416458731@qq.com']
 
 # mail()函数用来构建邮件。
 def mail():
