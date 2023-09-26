@@ -37,7 +37,7 @@ prop = fm.FontProperties(fname='/root/xianhuo/SimHei.ttf')
 #pip install jojo-office
 #import office
 #office.open_file("output.docx").save("output.pdf")
-
+date_now = datetime.datetime.utcnow()
 # ----- 基础btc数据
 url_address = [ 'https://api.glassnode.com/v1/metrics/market/price_usd_ohlc']
 url_name = ['k_fold']
@@ -1147,7 +1147,9 @@ document.add_paragraph('ETH Price/BTC Price',style = 'ListBullet')
 document.add_paragraph('当前该比值为：%s'%(per_1),style = 'ListBullet')
 document.add_picture('/root/xianhuo/out/eth_btc.png',width = Inches(5.25))
 
+doc_name = '%s日BTC链上数据一览'%(str(date_now)[0:10]) + '.doc'
+
 # 保存文档
-document.save('btc.doc')
+document.save(doc_name)
 
 
