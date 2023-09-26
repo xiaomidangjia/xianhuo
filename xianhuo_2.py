@@ -14,24 +14,32 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import hashlib
 import random
-from PIL import Image, ImageDraw, ImageFont
-import cv2
-from watermarker.marker import add_mark
+class YoudaoTranslator():
+    def __init__(self):
+        self.headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36",
+            "Referer": "https://fanyi.youdao.com/",
+            "Cookie": "OUTFOX_SEARCH_USER_ID=-873445509@10.108.162.139"
+        }
+        self.data = {
+            "i": None,
+            "client": "fanyideskweb",
+            "keyfrom": "fanyi.web",
+            "salt": None,
+            "sign": None,
+            "doctype": "json"
+        }
+        self.url = "http://fanyi.youdao.com/translate?smartresult-dict&smartresult-rule"
 
-def jigsaw(imgs, direction, gap=0):
-    imgs = [Image.fromarray(img) for img in imgs]
-    w, h = imgs[0].size
-    if direction == "horizontal":
-        result = Image.new(imgs[0].mode, ((w+gap)*len(imgs)-gap, h))
-        for i, img in enumerate(imgs):
-            result.paste(img, box=((w+gap)*i, 0))
-    elif direction == "vertical":
-        result = Image.new(imgs[0].mode, (w, (h+gap)*len(imgs)-gap))
-        for i, img in enumerate(imgs):
-            result.paste(img, box=(0, (h+gap)*i))
-    else:
-        raise ValueError("The direction parameter has only two options: horizontal and vertical")
-    return np.array(result)
+    def translate(self, text):
+        self.data["i"] = text
+        salt = f"{int(time.time() * 1000)}{random.randint(0, 9)}"
+        self.data["salt"] = salt
+        sign = f"fanyideskweb{text}{salt}6x(ZHw]mwzX#uev70yfw"
+        self.data["sign"] = hashlib.md5(sign.encode("utf-8")).hexdigest()
+        res = requests.post(self.url, headers=self.headers, data=self.data)
+        return res.json()["translateResult"][0][0]["tgt"]
+translator = YoudaoTranslator()
 # ======= 正式开始执行
 prop = fm.FontProperties(fname='/root/xianhuo/SimHei.ttf')
 #pip install jojo-office
@@ -84,10 +92,92 @@ price_data = price_data.sort_values(by=['date'])
 price_data = price_data.reset_index(drop=True)
 
 
-# =======================================================================btc链上数据===================================================================
+# =======================================================================读取重要新闻===================================================================
 
-# ----- btc市值占比
-url_address = [ 'https://api.glassnode.com/v1/metrics/market/btc_dominance']
+url1 ='https://cryptopanic.com/api/v1/posts/?auth_token=8e01333054e47edac9851e686061cf3b3a1f1689&filter=bullish&metadata=true'
+url2 ='https://cryptopanic.com/api/v1/posts/?auth_token=8e01333054e47edac9851e686061cf3b3a1f1689&filter=bearish&metadata=true'
+session = Session()
+#url= 'https://services.tokenview.io/vipapi/pending/btc/2e0ec4a6caec1cf2f9cd9e58a5a3954c531d20c08bb88ae8d1a91dc0547f3561?apikey=5u0dNQPd55eoEwFPwF2A'
+#session.headers.update(headers)
+logo = 0
+while logo ==0:
+    try:
+        response = session.get(url1)
+        data_bullish = json.loads(response.text)
+        logo = 1
+        time.sleep(1)
+    except:
+        continue
+logo = 0
+while logo ==0:
+    try:
+        response = session.get(url2)
+        data_bearish = json.loads(response.text)
+        logo = 1
+        time.sleep(1)
+    except:
+        continue
+
+title_zhang = []
+for i in range(len(data_bullish['results'])):
+    title_en = data_bullish['results'][i]['title']
+    print(i,title_en)
+    log = 0
+    while log == 0:
+        try:
+            title_t = translator.translate(title_en)
+            time.sleep(1)
+            log = 1
+        except:
+            continue
+    title_zhang.append(title_t)
+zhang_news_df = pd.DataFrame({'kanzhang':title_zhang})
+zhang_news_df['index'] = zhang_news_df.index
+title_die = []
+for i in range(len(data_bearish['results'])):
+    title_en = data_bearish['results'][i]['title']
+    print(i,title_en)
+    log = 0
+    while log == 0:
+        try:
+            title_t = translator.translate(title_en)
+            time.sleep(1)
+            log = 1
+        except:
+            continue
+    title_die.append(title_t)
+die_news_df = pd.DataFrame({'kandie':title_die})
+die_news_df['index'] = die_news_df.index
+
+news_df = zhang_news_df.merge(die_news_df,how='outer',on=['index'])
+news_df = news_df[['kanzhang','kandie']]
+
+# =========================================================================历史最相似===================================================================
+
+crypto_name = 'BTC'
+
+def cal_w(x):
+    if x>= pd.to_datetime('2013-01-01') and x<= pd.to_datetime('2013-12-31'):
+        y = 0
+    elif x>= pd.to_datetime('2014-01-01') and x<= pd.to_datetime('2014-12-31'):
+        y = 1
+    elif x>= pd.to_datetime('2015-01-01') and x<= pd.to_datetime('2016-12-31'):
+        y = 2
+    elif x>= pd.to_datetime('2017-01-01') and x<= pd.to_datetime('2017-12-31'):
+        y = 3
+    elif x>= pd.to_datetime('2018-01-01') and x<= pd.to_datetime('2018-12-31'):
+        y = 4
+    elif x>= pd.to_datetime('2019-01-01') and x<= pd.to_datetime('2019-12-31'):
+        y = 5
+    elif x>= pd.to_datetime('2020-01-01') and x<= pd.to_datetime('2021-11-30'):
+        y = 6
+    elif x>= pd.to_datetime('2021-12-01') and x<= pd.to_datetime('2022-12-31'):
+        y = 7
+    else:
+        y = 8
+    return y
+
+url_address = [ 'https://api.glassnode.com/v1/metrics/market/price_usd_ohlc']
 url_name = ['k_fold']
 # insert your API key here
 API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
@@ -97,13 +187,13 @@ for num in range(len(url_name)):
     addr = url_address[num]
     name = url_name[num]
     # make API request
-    res_addr = requests.get(addr,params={'a': 'BTC', 'api_key': API_KEY})
+    res_addr = requests.get(addr,params={'a': crypto_name, 'api_key': API_KEY})
     # convert to pandas dataframe
     ins = pd.read_json(res_addr.text, convert_dates=['t'])
     #ins.to_csv('test.csv')
     #print(ins['o'])
     ins['date'] =  ins['t']
-    ins['value'] =  ins['v']
+    ins['value'] =  ins['o']
     ins = ins[['date','value']]
     data_list.append(ins)
 result_data = data_list[0][['date']]
@@ -111,358 +201,282 @@ for i in range(len(data_list)):
     df = data_list[i]
     result_data = result_data.merge(df,how='left',on='date')
 #last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
-domain_data = result_data[(result_data.date>='2013-01-01')]
-domain_data = domain_data.sort_values(by=['date'])
-domain_data = domain_data.reset_index(drop=True)
-domain_data = domain_data.merge(price_data,how='left',on=['date'])
-
-
-f, axes = plt.subplots(figsize=(20, 10))
-axes_fu = axes.twinx()
-sns.lineplot(x="date", y="value",color='red',data=domain_data, ax=axes_fu)
-sns.lineplot(x="date", y="close",color='black', data=domain_data, ax=axes)
-axes.tick_params(labelsize=10)
-plt.title('BTC Dominance', fontsize=10) 
-axes.legend(loc='upper left', fontsize=5)
-axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
-axes.set_ylabel("BTC price",fontsize=10)
-axes_fu.set_ylabel("BTC Dominance",fontsize=10)
-
-#plt.show()
-plt.savefig('btc_dominance.png')
-plt.close()
-add_mark(file = "btc_dominance.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
-
-
-# ----- 矿工
-url_address = ['https://api.glassnode.com/v1/metrics/transactions/transfers_volume_miners_to_exchanges']
-url_name = ['k_fold']
-# insert your API key here
-API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
-data_list = []
-for num in range(len(url_name)):
-    print(num)
-    addr = url_address[num]
-    name = url_name[num]
-    # make API request
-    res_addr = requests.get(addr,params={'a': 'BTC', 'api_key': API_KEY})
-    # convert to pandas dataframe
-    ins = pd.read_json(res_addr.text, convert_dates=['t'])
-    #ins.to_csv('test.csv')
-    #print(ins['o'])
-    ins['date'] =  ins['t']
-    ins['value'] =  ins['v']
-    ins = ins[['date','value']]
-    data_list.append(ins)
-result_data = data_list[0][['date']]
-for i in range(len(data_list)):
-    df = data_list[i]
-    result_data = result_data.merge(df,how='left',on='date')
-#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
-miner_data = result_data[(result_data.date>='2013-01-01')]
-miner_data = miner_data.sort_values(by=['date'])
-miner_data = miner_data.reset_index(drop=True)
-
-
+last_data = result_data[(result_data.date>='2013-01-01')]
+last_data = last_data.sort_values(by=['date'])
+last_data = last_data.reset_index(drop=True)
+#print(type(last_data))
 date = []
-miner_raw = []
-for j in range(20,len(miner_data)+1):
-    ins = miner_data[j-14:j]
-    ins = ins.sort_values(by='date')
-    ins = ins.reset_index(drop=True)
-    date.append(ins['date'][13])
-    miner_raw.append(np.mean(ins['value']))
-miner_data_1 = pd.DataFrame({'date':date,'miner_raw':miner_raw})
-miner_data_1 = miner_data_1[(miner_data_1.date>='2019-01-01')]
-
-
-miner_data = miner_data_1.merge(price_data,how='left',on=['date'])
-
-
-f, axes = plt.subplots(figsize=(20, 10))
-axes_fu = axes.twinx()
-sns.lineplot(x="date", y="miner_raw",color='red',data=miner_data, ax=axes_fu)
-sns.lineplot(x="date", y="close",color='black', data=miner_data, ax=axes)
-axes.tick_params(labelsize=10)
-plt.title('Miner To Exhanges', fontsize=10) 
-axes.legend(loc='upper left', fontsize=5)
-axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
-axes.set_ylabel("BTC price",fontsize=10)
-axes_fu.set_ylabel("BTC Volume",fontsize=10)
-
-#plt.show()
-plt.savefig('btc_miner_v.png')
-plt.close()
-
-add_mark(file = "btc_miner_v.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
-
-
-
-# ----- 巨鲸
-url_address = [ 'https://api.glassnode.com/v1/metrics/transactions/transfers_volume_whales_to_exchanges_sum']
-url_name = ['k_fold']
-# insert your API key here
-API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
+open_p = []
+close_p = []
+high_p = []
+low_p = []
+for i in range(len(last_data)):
+    date.append(last_data['date'][i])
+    open_p.append(last_data['value'][i]['o'])
+    close_p.append(last_data['value'][i]['c'])
+    high_p.append(last_data['value'][i]['h'])
+    low_p.append(last_data['value'][i]['l'])
+res_data = pd.DataFrame({'date':date,'open':open_p,'close':close_p,'high':high_p,'low':low_p})
+res_data['judge'] = res_data['date'].apply(lambda x:cal_w(x))
+#res_data = res_data[res_data.judge == num_list]
+#res_data = res_data[res_data.judge==1]
+res_data = res_data.sort_values(by=['date'])
+res_data = res_data.reset_index(drop=True)  
+zhangdiefu = res_data
+from scipy import stats
+#只和同一阶段内的数据比较，现在是萧条期，只和历史的萧条期比较
+last_7day_data = res_data[-14:]
+last_7day_price = list(last_7day_data['close'])
+print(last_7day_price)
+compare_data_1 = res_data[res_data.judge==2]
+compare_data_2 = res_data[res_data.judge==5]
+compare_data_1 = compare_data_1.reset_index(drop=True)
+compare_data_2 = compare_data_2.reset_index(drop=True)
 data_list = []
-for num in range(len(url_name)):
-    print(num)
-    addr = url_address[num]
-    name = url_name[num]
-    # make API request
-    res_addr = requests.get(addr,params={'a': 'BTC', 'api_key': API_KEY})
-    # convert to pandas dataframe
-    ins = pd.read_json(res_addr.text, convert_dates=['t'])
-    #ins.to_csv('test.csv')
-    #print(ins['o'])
-    ins['date'] =  ins['t']
-    ins['value'] =  ins['v']
-    ins = ins[['date','value']]
+date_list = []
+value_simi = []
+for i in range(0,len(compare_data_2)-14):
+    ins = list(compare_data_2['close'][i:i+14])
     data_list.append(ins)
-result_data = data_list[0][['date']]
-for i in range(len(data_list)):
-    df = data_list[i]
-    result_data = result_data.merge(df,how='left',on='date')
-#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
-whale_data = result_data[(result_data.date>='2013-01-01')]
-whale_data = whale_data.sort_values(by=['date'])
-whale_data = whale_data.reset_index(drop=True)
-whale_data = whale_data.merge(price_data,how='left',on=['date'])
+    ins_date = list(compare_data_2['date'][i:i+14])
+    date_list.append(ins_date)
+    p = stats.pearsonr(last_7day_price,ins)
+    #print(p)
+    value_simi.append(p[0])
+maxid = value_simi.index(np.max(value_simi))
+simi_date = date_list[maxid]
+simi_data = data_list[maxid]
+last_7day_data['Open'] = last_7day_data['open']
+last_7day_data['Close'] = last_7day_data['close']
+last_7day_data['High'] = last_7day_data['high']
+last_7day_data['Low'] = last_7day_data['low']
+last_7day_data = last_7day_data[['date','Open','Close','High','Low']]
+last_7day_data = last_7day_data.set_index(last_7day_data['date'])
+filename_1 = 'fig_1.jpg'
+start_date = str(np.min(last_7day_data['date']))[0:10]
+end_date = str(np.max(last_7day_data['date']))[0:10]
+type_bk ='%s - %s BTC OHLC Candles'%(start_date,end_date)
+#设置绘制K线的基本参数
+import mplfinance as mpf
+#def draw_bk(title_name,filename,stock,add_plot):
+def draw_bk(title_name,filename,stock):
+    ##########################
+    # 设置marketcolors
+    mc = mpf.make_marketcolors(
+        up='red',
+        down='green',
+        edge='i',
+        wick='i',
+        volume='in',
+        inherit=True)
+
+    # 设置图形风格
+    s = mpf.make_mpf_style(
+        gridaxis='both',
+        gridstyle='-.',
+        y_on_right=False,
+        marketcolors=mc,
+        mavcolors=['yellow','blue'])
+
+    kwargs = dict(
+        type='candle',
+        mav=(5, 10),
+        volume=True,
+        title=title_name,
+        ylabel='OHLC Candles',
+        ylabel_lower='Traded Volume',
+        figratio=(25, 10),
+        figscale=2
+        )
+    mpf.plot(stock,
+             **kwargs,
+             style=s,
+             show_nontrading=False,
+             #addplot = add_plot,
+             savefig=filename
+             )
+
+import matplotlib.pyplot as plt
+import matplotlib as mpl# 用于设置曲线参数
+from cycler import cycler
+mc = mpf.make_marketcolors(
+    up='red',
+    down='green',
+    edge='i',
+    wick='i',
+    volume='in',
+    inherit=True)
+
+# 设置图形风格
+s = mpf.make_mpf_style(
+    gridaxis='both',
+    gridstyle='-.',
+    y_on_right=False,
+    marketcolors=mc,
+    #mavcolors=['yellow','blue']
+)
+
+kwargs = dict(
+    type='candle',
+    #mav=(5, 10),
+    volume=False,
+    title=type_bk,
+    ylabel='Price',
+    ylabel_lower='Traded Volume',
+    figratio=(25, 10),
+    figscale=1
+    )
+
+#add_plot = mpf.make_addplot(sub_ins[['lowerB','upperB','middleB']])
+#draw_bk(type_bk, filename,sub_ins)
+mpl.rcParams['axes.prop_cycle'] = cycler(
+    color=['dodgerblue','teal'])
+
+# 设置线宽
+mpl.rcParams['lines.linewidth'] = 0.5
+
+mpf.plot(last_7day_data,
+         **kwargs,
+         style=s,
+         show_nontrading=False,
+         #addplot = add_plot,
+         savefig=filename_1
+         )
+plt.show()
+min_simi_date = np.min(simi_date)
+simi_df = res_data[res_data.date>=min_simi_date]
+pre_simi_df = simi_df.reset_index(drop=True)
+simi_df = pre_simi_df[0:14]
+simi_df_pre = pre_simi_df[14:19]
+
+simi_df = simi_df.set_index(simi_df['date'])
+filename_2 = 'fig_2.jpg'
+start_date_p = str(np.min(simi_df['date']))[0:10]
+end_date_p = str(np.max(simi_df['date']))[0:10]
+type_bk_1 ='%s - %s BTC OHLC Candles'%(start_date_p,end_date_p)
+mc = mpf.make_marketcolors(
+    up='red',
+    down='green',
+    edge='i',
+    wick='i',
+    volume='in',
+    inherit=True)
+
+# 设置图形风格
+s = mpf.make_mpf_style(
+    gridaxis='both',
+    gridstyle='-.',
+    y_on_right=False,
+    marketcolors=mc,
+    #mavcolors=['yellow','blue']
+)
+
+kwargs = dict(
+    type='candle',
+    #mav=(5, 10),
+    volume=False,
+    title=type_bk_1,
+    ylabel='Price',
+    ylabel_lower='Traded Volume',
+    figratio=(25, 10),
+    figscale=1
+    )
+
+#add_plot = mpf.make_addplot(sub_ins[['lowerB','upperB','middleB']])
+#draw_bk(type_bk, filename,sub_ins)
+mpl.rcParams['axes.prop_cycle'] = cycler(
+    color=['dodgerblue','teal'])
+
+# 设置线宽
+mpl.rcParams['lines.linewidth'] = 0.5
+mpf.plot(simi_df,
+         **kwargs,
+         style=s,
+         show_nontrading=False,
+         #addplot = add_plot,
+         savefig=filename_2
+         )
+plt.show()
 
 
-date = []
-whale_raw = []
-for j in range(30,len(whale_data)+1):
-    ins = whale_data[j-30:j]
-    ins = ins.sort_values(by='date')
-    ins = ins.reset_index(drop=True)
-    date.append(ins['date'][29])
-    whale_raw.append(np.mean(ins['value']))
-whale_data_1 = pd.DataFrame({'date':date,'whale_raw':whale_raw})
-whale_data_1 = whale_data_1[(whale_data_1.date>='2019-01-01')]
+filename_3 = 'fig_3.jpg'
+start_date_w = np.max(simi_df['date']) + datetime.timedelta(days=1)
+end_date_w = start_date_w + datetime.timedelta(days=7)
+
+next_df = res_data[(res_data.date >= start_date_w) & (res_data.date <= end_date_w)]
+next_df = next_df.set_index(next_df['date'])
+type_bk_2 ='%s - %s BTC OHLC Candles'%(str(start_date_w)[0:10],str(end_date_w)[0:10])
+mc = mpf.make_marketcolors(
+    up='red',
+    down='green',
+    edge='i',
+    wick='i',
+    volume='in',
+    inherit=True)
+
+# 设置图形风格
+s = mpf.make_mpf_style(
+    gridaxis='both',
+    gridstyle='-.',
+    y_on_right=False,
+    marketcolors=mc,
+    #mavcolors=['yellow','blue']
+)
+
+kwargs = dict(
+    type='candle',
+    #mav=(5, 10),
+    volume=False,
+    title=type_bk_2,
+    ylabel='Price',
+    ylabel_lower='Traded Volume',
+    figratio=(25, 10),
+    figscale=1
+    )
+
+#add_plot = mpf.make_addplot(sub_ins[['lowerB','upperB','middleB']])
+#draw_bk(type_bk, filename,sub_ins)
+mpl.rcParams['axes.prop_cycle'] = cycler(
+    color=['dodgerblue','teal'])
+
+# 设置线宽
+mpl.rcParams['lines.linewidth'] = 0.5
+mpf.plot(next_df,
+         **kwargs,
+         style=s,
+         show_nontrading=False,
+         #addplot = add_plot,
+         savefig=filename_3
+         )
+plt.show()
+
+# coding=utf-8
+from PIL import Image, ImageDraw, ImageFont
+import cv2
 
 
-whale_data = whale_data_1.merge(price_data,how='left',on=['date'])
+def jigsaw(imgs, direction, gap=0):
+    imgs = [Image.fromarray(img) for img in imgs]
+    w, h = imgs[0].size
+    if direction == "horizontal":
+        result = Image.new(imgs[0].mode, ((w+gap)*len(imgs)-gap, h))
+        for i, img in enumerate(imgs):
+            result.paste(img, box=((w+gap)*i, 0))
+    elif direction == "vertical":
+        result = Image.new(imgs[0].mode, (w, (h+gap)*len(imgs)-gap))
+        for i, img in enumerate(imgs):
+            result.paste(img, box=(0, (h+gap)*i))
+    else:
+        raise ValueError("The direction parameter has only two options: horizontal and vertical")
+    return np.array(result)
 
-
-f, axes = plt.subplots(figsize=(20, 10))
-axes_fu = axes.twinx()
-sns.lineplot(x="date", y="whale_raw",color='red',data=whale_data, ax=axes_fu)
-sns.lineplot(x="date", y="close",color='black', data=whale_data, ax=axes)
-axes.tick_params(labelsize=10)
-plt.title('Whale To Exhanges', fontsize=10) 
-axes.legend(loc='upper left', fontsize=5)
-axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
-axes.set_ylabel("BTC price",fontsize=10)
-axes_fu.set_ylabel("Whale Volume",fontsize=10)
-
-#plt.show()
-plt.savefig('btc_whale_v.png')
-plt.close()
-add_mark(file = "btc_whale_v.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
-
-
-
-
-# ---- btc净流入交易所
-
-url_address = [ 'https://api.glassnode.com/v1/metrics/transactions/transfers_volume_exchanges_net']
-url_name = ['k_fold']
-# insert your API key here
-API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
-data_list = []
-for num in range(len(url_name)):
-    print(num)
-    addr = url_address[num]
-    name = url_name[num]
-    # make API request
-    res_addr = requests.get(addr,params={'a': 'BTC', 'api_key': API_KEY})
-    # convert to pandas dataframe
-    ins = pd.read_json(res_addr.text, convert_dates=['t'])
-    #ins.to_csv('test.csv')
-    #print(ins['o'])
-    ins['date'] =  ins['t']
-    ins['value'] =  ins['v']
-    ins = ins[['date','value']]
-    data_list.append(ins)
-result_data = data_list[0][['date']]
-for i in range(len(data_list)):
-    df = data_list[i]
-    result_data = result_data.merge(df,how='left',on='date')
-#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
-jinliuru_data = result_data[(result_data.date>='2013-01-01')]
-jinliuru_data = jinliuru_data.sort_values(by=['date'])
-jinliuru_data = jinliuru_data.reset_index(drop=True)
-jinliuru_data = jinliuru_data.merge(price_data,how='left',on=['date'])
-jinliuru_data = jinliuru_data[-120:]
-f, axes = plt.subplots(figsize=(20, 10))
-sns.barplot(x="date", y="value",data=jinliuru_data, ax=axes)
-#sns.lineplot(x="date", y="close",color='black', data=jinliuru_data, ax=axes)
-axes.tick_params(labelsize=10)
-plt.title('BTC Netflow Exchanges', fontsize=10) 
-axes.legend(loc='upper left', fontsize=5)
-axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
-axes.set_ylabel("Netflow",fontsize=10)
-#plt.show()
-plt.savefig('btc_netflow.png')
-plt.close()
-add_mark(file = "btc_netflow.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
-
-
-# ----- usdt
-url_address = [ 'https://api.glassnode.com/v1/metrics/transactions/transfers_volume_exchanges_net']
-url_name = ['k_fold']
-# insert your API key here
-API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
-data_list = []
-for num in range(len(url_name)):
-    print(num)
-    addr = url_address[num]
-    name = url_name[num]
-    # make API request
-    res_addr = requests.get(addr,params={'a': 'USDT', 'api_key': API_KEY})
-    # convert to pandas dataframe
-    ins = pd.read_json(res_addr.text, convert_dates=['t'])
-    #ins.to_csv('test.csv')
-    #print(ins['o'])
-    ins['date'] =  ins['t']
-    ins['value'] =  ins['v']
-    ins = ins[['date','value']]
-    data_list.append(ins)
-result_data = data_list[0][['date']]
-for i in range(len(data_list)):
-    df = data_list[i]
-    result_data = result_data.merge(df,how='left',on='date')
-#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
-u_jinliuru_data = result_data[(result_data.date>='2013-01-01')]
-u_jinliuru_data = u_jinliuru_data.sort_values(by=['date'])
-u_jinliuru_data = u_jinliuru_data.reset_index(drop=True)
-u_jinliuru_data = u_jinliuru_data.merge(price_data,how='left',on=['date'])
-u_jinliuru_data = u_jinliuru_data[-120:]
-f, axes = plt.subplots(figsize=(20, 10))
-sns.barplot(x="date", y="value",data=u_jinliuru_data, ax=axes)
-#sns.lineplot(x="date", y="close",color='black', data=jinliuru_data, ax=axes)
-axes.tick_params(labelsize=10)
-plt.title('USDT Netflow Exchanges', fontsize=10) 
-axes.legend(loc='upper left', fontsize=5)
-axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
-axes.set_ylabel("Netflow",fontsize=10)
-#plt.show()
-plt.savefig('usdt_netflow.png')
-plt.close()
-f, axes = plt.subplots(figsize=(20, 10))
-#sns.barplot(x="date", y="value",data=jinliuru_data, ax=axes)
-sns.lineplot(x="date", y="close",color='black', data=u_jinliuru_data, ax=axes)
-axes.tick_params(labelsize=10)
-plt.title('BTC Price', fontsize=10) 
-axes.legend(loc='upper left', fontsize=5)
-axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
-axes.set_ylabel("Price",fontsize=10)
-#plt.show()
-plt.savefig('btc_price_1.png')
-plt.close()
-
-
-img1 = cv2.imread("btc_price_1.png")
-img2 = cv2.imread("usdt_netflow.png")
-img = jigsaw([img1, img2],direction="vertical")
-name = 'usdt_netflow_price.png'
+img1 = cv2.imread("fig_1.jpg")
+img2 = cv2.imread("fig_2.jpg")
+img3 = cv2.imread("fig_3.jpg")
+img = jigsaw([img1, img2,img3],direction="vertical")
+name = 'btc_simi.png'
 cv2.imwrite(name, img)
-add_mark(file = "usdt_netflow_price.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
-# btc_risk_index
-url_address = [ 'https://api.glassnode.com/v1/metrics/signals/btc_risk_index']
-url_name = ['k_fold']
-# insert your API key here
-API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
-data_list = []
-for num in range(len(url_name)):
-    print(num)
-    addr = url_address[num]
-    name = url_name[num]
-    # make API request
-    res_addr = requests.get(addr,params={'a': 'BTC', 'api_key': API_KEY})
-    # convert to pandas dataframe
-    ins = pd.read_json(res_addr.text, convert_dates=['t'])
-    #ins.to_csv('test.csv')
-    #print(ins['o'])
-    ins['date'] =  ins['t']
-    ins['value'] =  ins['v']
-    ins = ins[['date','value']]
-    data_list.append(ins)
-result_data = data_list[0][['date']]
-for i in range(len(data_list)):
-    df = data_list[i]
-    result_data = result_data.merge(df,how='left',on='date')
-#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
-risk_data = result_data[(result_data.date>='2013-01-01')]
-risk_data = risk_data.sort_values(by=['date'])
-risk_data = risk_data.reset_index(drop=True)
-risk_data = risk_data.merge(price_data,how='left',on=['date'])
-risk_data = risk_data[risk_data.date>='2023-01-01']
-risk_data['x1'] = 0.25
-f, axes = plt.subplots(figsize=(20, 10))
-axes_fu = axes.twinx()
-sns.lineplot(x="date", y="value",data=risk_data, ax=axes)
-sns.lineplot(x="date", y="x1",data=risk_data, ax=axes)
-sns.lineplot(x="date", y="close",color='black', data=risk_data, ax=axes_fu)
-axes.tick_params(labelsize=10)
-plt.title('BTC RISK INDEX', fontsize=10) 
-axes.legend(loc='upper left', fontsize=5)
-axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
-axes.set_ylabel("INDEX",fontsize=10)
-#plt.show()
-plt.savefig('risk_index.png')
-plt.close()
-add_mark(file = "risk_index.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
-
-
-# ----- 基础btc数据
-url_address = [ 'https://api.glassnode.com/v1/metrics/indicators/nupl_less_155_account_based']
-url_name = ['k_fold']
-# insert your API key here
-API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
-data_list = []
-for num in range(len(url_name)):
-    print(num)
-    addr = url_address[num]
-    name = url_name[num]
-    # make API request
-    res_addr = requests.get(addr,params={'a': 'BTC', 'api_key': API_KEY})
-    # convert to pandas dataframe
-    ins = pd.read_json(res_addr.text, convert_dates=['t'])
-    #ins.to_csv('test.csv')
-    #print(ins['o'])
-    ins['date'] =  ins['t']
-    ins['value'] =  ins['v']
-    ins = ins[['date','value']]
-    data_list.append(ins)
-result_data = data_list[0][['date']]
-for i in range(len(data_list)):
-    df = data_list[i]
-    result_data = result_data.merge(df,how='left',on='date')
-#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
-nupl_data = result_data[(result_data.date>='2013-01-01')]
-nupl_data = nupl_data.sort_values(by=['date'])
-nupl_data = nupl_data.reset_index(drop=True)
-nupl_data = nupl_data.merge(price_data,how='left',on=['date'])
-nupl_data = nupl_data[nupl_data.date>='2023-01-01']
-nupl_data['x1'] = 0
-nupl_data['x2'] = 0.25
-f, axes = plt.subplots(figsize=(20, 10))
-axes_fu = axes.twinx()
-sns.lineplot(x="date", y="value",color='red',data=nupl_data, ax=axes)
-sns.lineplot(x="date", y="x1",color='green',linestyle='--',data=nupl_data, ax=axes)
-sns.lineplot(x="date", y="x2",color='green',linestyle='--',data=nupl_data, ax=axes)
-sns.lineplot(x="date", y="close",color='black', data=nupl_data, ax=axes_fu)
-axes.tick_params(labelsize=10)
-plt.title('Entity-Adjusted STH-NUPL', fontsize=10) 
-axes.legend(loc='upper left', fontsize=5)
-axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
-axes.set_ylabel("STH-NUPL",fontsize=10)
-#plt.show()
-plt.savefig('sth_nupl.png')
-plt.close()
-add_mark(file = "sth_nupl.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 # =======================================================================黑天鹅地址监控===================================================================
 
@@ -540,7 +554,6 @@ axes_fu.set_ylabel("持有BTC总量",fontsize=14,fontproperties=prop)
 plt.savefig('US_MT.png',  bbox_inches='tight')
 plt.close()
 
-add_mark(file = "US_MT.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 
 
@@ -682,7 +695,6 @@ axes_fu.set_ylabel("发行总量",fontsize=14,fontproperties=prop)
 plt.savefig('BTC价格-稳定币发行总量.png',  bbox_inches='tight')
 plt.close()
 
-add_mark(file = "BTC价格-稳定币发行总量.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 
 # =======================================================================美国经济数据===================================================================
@@ -748,8 +760,93 @@ axes.set_ylabel("BTC价格",fontsize=14,fontproperties=prop)
 plt.savefig('BTC价格120D.png',  bbox_inches='tight')
 plt.close()
 
-add_mark(file = "BTC价格120D.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
+
+# =======================================================================聪明钱地址追踪===================================================================
+
+url ='https://services.tokenview.io/vipapi/address/balancetrend/eth/0x111cff45948819988857bbf1966a0399e0d1141e?apikey=5u0dNQPd55eoEwFPwF2A'
+session = Session()
+#url= 'https://services.tokenview.io/vipapi/pending/btc/2e0ec4a6caec1cf2f9cd9e58a5a3954c531d20c08bb88ae8d1a91dc0547f3561?apikey=5u0dNQPd55eoEwFPwF2A'
+#session.headers.update(headers)
+logo = 0
+while logo ==0:
+    try:
+        response = session.get(url)
+        data = json.loads(response.text)
+        print(data)
+        date = []
+        ba = []
+        for i in range(len(data['data'])):
+            ins = data['data'][i]
+            date.append(next(iter(ins.keys())))
+            ba.append(float(next(iter(ins.values()))))
+        sub_df = pd.DataFrame({'date':date,'value':ba})
+        sub_df_n = sub_df[sub_df.value < 100]
+        if len(sub_df_n) == 0:
+            logo = 1
+        else:
+            logo = 0
+            time.sleep(1)
+    except:
+        continue
+
+sub_df['date'] = pd.to_datetime(sub_df['date'])
+res_df_smart = sub_df.merge(price_data[['date','close']],how='left',on=['date'])
+res_df_smart = res_df_smart.sort_values(by='date')
+res_df_smart = res_df_smart.reset_index(drop=True)
+
+# 绘画折线图
+f, axes = plt.subplots(figsize=(20, 10))
+axes_fu = axes.twinx()
+sns.lineplot(x="date", y="value",color='red', linewidth=0.5,data=res_df_smart, ax=axes)
+sns.lineplot(x="date", y="close", data=res_df_smart, ax=axes_fu)
+plt.title('ETH聪明钱地址追踪', fontsize=20,fontproperties=prop) 
+axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
+axes.set_ylabel("持仓量",fontsize=14,fontproperties=prop)
+axes_fu.set_ylabel("ETH价格",fontsize=14,fontproperties=prop)
+
+plt.savefig('eth_smart.png',  bbox_inches='tight')
+plt.close()
+
+
+
+url ='https://services.tokenview.io/vipapi/address/balancetrend/eth/0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe?apikey=5u0dNQPd55eoEwFPwF2A'
+session = Session()
+#url= 'https://services.tokenview.io/vipapi/pending/btc/2e0ec4a6caec1cf2f9cd9e58a5a3954c531d20c08bb88ae8d1a91dc0547f3561?apikey=5u0dNQPd55eoEwFPwF2A'
+#session.headers.update(headers)
+logo = 0
+while logo ==0:
+    try:
+        response = session.get(url)
+        data = json.loads(response.text)
+        logo = 1
+        time.sleep(1)
+    except:
+        continue
+date = []
+ba = []
+for i in range(len(data['data'])):
+    ins = data['data'][i]
+    date.append(next(iter(ins.keys())))
+    ba.append(float(next(iter(ins.values()))))
+sub_df_fund = pd.DataFrame({'date':date,'value':ba})
+sub_df_fund['date'] = pd.to_datetime(sub_df_fund['date'])
+res_df_fund = sub_df_fund.merge(price_data[['date','close']],how='left',on=['date'])
+res_df_fund = res_df_fund.sort_values(by='date')
+res_df_fund = res_df_fund.reset_index(drop=True)
+
+# 绘画折线图
+f, axes = plt.subplots(figsize=(20, 10))
+axes_fu = axes.twinx()
+sns.lineplot(x="date", y="value",color='red', linewidth=0.5,data=res_df_fund, ax=axes)
+sns.lineplot(x="date", y="close", data=res_df_fund, ax=axes_fu)
+plt.title('以太坊基金会地址追踪', fontsize=20,fontproperties=prop) 
+axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
+axes.set_ylabel("持仓量",fontsize=14,fontproperties=prop)
+axes_fu.set_ylabel("ETH价格",fontsize=14,fontproperties=prop)
+
+plt.savefig('eth_fund.png',  bbox_inches='tight')
+plt.close()
 
 
 
@@ -957,7 +1054,6 @@ plt.title('每日aSOPR值', fontsize=20,fontproperties=prop)
 plt.savefig('aSOPR.png') 
 plt.close()
 
-add_mark(file = "aSOPR.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 # --- 7ma asopr
 f, axes = plt.subplots(figsize=(20, 10))
@@ -975,7 +1071,6 @@ axes_fu.set_ylabel("7MA aSOPR",fontsize=10)
 plt.savefig('7MA_aSOPR.png') 
 plt.close()
 
-add_mark(file = "7MA_aSOPR.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 # --- mvrv
 f, axes = plt.subplots(figsize=(20, 10))
@@ -993,8 +1088,6 @@ axes_fu.set_ylabel("MVRV Z-Score",fontsize=10)
 
 plt.savefig('MVRV_Z_Score.png') 
 plt.close()
-add_mark(file = "MVRV_Z_Score.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
-
 # --- pm
 f, axes = plt.subplots(figsize=(20, 10))
 axes_fu = axes.twinx()
@@ -1013,8 +1106,6 @@ axes_fu.set_ylabel("Puell Multiple",fontsize=10)
 #plt.show()
 plt.savefig('Puell.png')
 plt.close()
-add_mark(file = "Puell.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
-
 # --- rhold
 f, axes = plt.subplots(figsize=(20, 10))
 axes_fu = axes.twinx()
@@ -1033,7 +1124,6 @@ axes_fu.set_ylabel("log(RHODL Ratio)",fontsize=10)
 #plt.show()
 plt.savefig('RHODL.png')
 plt.close()
-add_mark(file = "RHODL.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 # --- supply
 
@@ -1053,7 +1143,6 @@ axes_fu.set_ylabel("Percent Supply in Profit",fontsize=10)
 #plt.show()
 plt.savefig('Percent_Supply.png')
 plt.close()
-add_mark(file = "Percent_Supply.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 # ========================================================================附录=========================================================================
 url_address = ['https://api.glassnode.com/v1/metrics/market/price_usd_close']
@@ -1122,7 +1211,6 @@ axes_fu.set_ylabel("ETH Price/BTC Price",fontsize=10)
 #plt.show()
 plt.savefig('eth_btc.png')
 plt.close()
-add_mark(file = "eth_btc.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 
 # meme币
@@ -1239,195 +1327,76 @@ from docx.shared import Inches
 # 创建文档对象
 document = Document()
 # 设置文档标题，中文要用unicode字符串
-document.add_heading(u'%s日BTC链上数据一览'%(str(date_now)[0:10]),0)
+document.add_heading(u'%s日BTC现货策略数据'%(str(date_now)[0:10]),0)
 # 添加有序列表
-
-document.add_paragraph('BTC价格和流入流出交易所',style = 'ListBullet')
-document.add_paragraph('链上稳定币监控',style = 'ListBullet')
-document.add_paragraph('重要链上指标监控',style = 'ListBullet')
+document.add_paragraph('昨日重要新闻一览',style = 'ListBullet')
+document.add_paragraph('BTC价格收盘回顾',style = 'ListBullet')
 document.add_paragraph('黑天鹅事件监控',style = 'ListBullet')
+document.add_paragraph('链上大额转账监控',style = 'ListBullet')
+document.add_paragraph('链上稳定币监控',style = 'ListBullet')
+document.add_paragraph('美国重要经济数据公布日期',style = 'ListBullet')
+document.add_paragraph('聪明钱地址监控',style = 'ListBullet')
+document.add_paragraph('USDT场外溢价率预测',style = 'ListBullet')
+document.add_paragraph('短期行情链上指标',style = 'ListBullet')
+document.add_paragraph('长期行情链上指标',style = 'ListBullet')
+
+document.add_paragraph('MMC研究猿0xCarson',style = 'ListBullet')
 
 
+# ------ 重要新闻一览
+document.add_page_break()
+#p = document.add_paragraph('This is a paragraph in new page.')
+document.add_heading(u'1.重要新闻一览',level = 1)
+
+t = document.add_table(rows=1, cols=2) # 插入表格，先将表头写好，参数：rows:行，cols:列
+hdr_cells = t.rows[0].cells
+hdr_cells[0].text = '看涨新闻' # 表头
+hdr_cells[1].text = '看跌新闻'# 表头
+
+for d in news_df.values.tolist(): # 
+    print(d)
+    for kanzhang,kandie in [d]: # 读取每一行内容
+        row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
+        row_cells[0].text = kanzhang 
+        row_cells[1].text = kandie
 # -----  120/200/4y 均线
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'1.BTC价格和流入流出交易所',level = 1)
+document.add_heading(u'2.BTC价格收盘回顾',level = 1)
 jun_df = jun_df.reset_index(drop=True)
 value_1 = jun_df['price_raw'][len(jun_df)-1]
 value_120 = jun_df['price_ma120'][len(jun_df)-1]
 value_200 = jun_df['price_ma200'][len(jun_df)-1]
 value_4y = jun_df['price_ma4y'][len(jun_df)-1]
 
-btc_zhangdiefu = round( ((price_data['close'][len(price_data)-2] - price_data['close'][len(price_data)-3])/price_data['close'][len(price_data)-3])*100,2)
-btc_zhangdiefu_1 = str(btc_zhangdiefu)+'%'
+btc_zhangdiefu = round( ((zhangdiefu['close'][len(zhangdiefu)-1] - zhangdiefu['open'][len(zhangdiefu)-1])/zhangdiefu['open'][len(zhangdiefu)-1])*100,2)
+
 
 document.add_paragraph('昨日BTC收盘价格为：%s'%(str(value_1)),style = 'ListBullet')
-document.add_paragraph('昨日BTC涨幅为：%s'%(btc_zhangdiefu_1),style = 'ListBullet')
+document.add_paragraph('昨日BTC涨幅为：%s'%(str(btc_zhangdiefu)+'%'),style = 'ListBullet')
 document.add_paragraph('昨日BTC收盘MA120价格为：%s'%(str(value_120)),style = 'ListBullet')
 document.add_paragraph('昨日BTC收盘MA200价格为：%s'%(str(value_200)),style = 'ListBullet')
 document.add_paragraph('昨日BTC收盘MA4Y价格为：%s'%(str(value_4y)),style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('/root/xianhuo/out/BTC价格120D.png',width = Inches(5.25))
+document.add_picture('BTC价格120D.png',width = Inches(6.25))
 
-document.add_paragraph('BTC市值占比',style = 'ListBullet')
-document.add_paragraph('牛市要启动，比特币市值占比至少要高于50%。',style = 'ListBullet')
-btc_dominance = str(domain_data['value'][len(domain_data)-1]) + '%'
-text = '今日BTC市值占比为：%s。'%(btc_dominance)
+document.add_paragraph('历史相似行情',style = 'ListBullet')
+text = '%s至%s大饼价格走势与历史%s至%s大饼价格走势最相似，相似度为%s。'%(start_date,end_date,start_date_p,end_date_p,round(np.max(value_simi),2))
 document.add_paragraph(text,style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('/root/xianhuo/out/btc_dominance.png',width = Inches(5.25))
-
-document.add_paragraph('交易所比特币净流入量',style = 'ListBullet')
-jinliuru_data = jinliuru_data.reset_index(drop=True)
-
-btc_netflow = jinliuru_data['value'][len(jinliuru_data)-1]
-text = '昨日交易所比特币净流入量为：%s。'%(btc_netflow)
-document.add_paragraph(text,style = 'ListBullet')
-# 添加图片，并指定宽度
-document.add_picture('/root/xianhuo/out/btc_netflow.png',width = Inches(5.25))
-
-document.add_paragraph('近14日矿工每日平均流入交易所比特币量',style = 'ListBullet')
-miner_data = miner_data.reset_index(drop=True)
-
-miner_netflow = miner_data['miner_raw'][len(miner_data)-1]
-text = '昨日矿工流入交易所比特币量为：%s。'%(miner_netflow)
-document.add_paragraph(text,style = 'ListBullet')
-# 添加图片，并指定宽度
-document.add_picture('/root/xianhuo/out/btc_miner_v.png',width = Inches(5.25))
-
-document.add_paragraph('近30日巨鲸每日平均流入交易所比特币量',style = 'ListBullet')
-whale_data = whale_data.reset_index(drop=True)
-
-whale_netflow = whale_data['whale_raw'][len(whale_data)-1]
-text = '昨日巨鲸流入交易所比特币量为：%s。'%(whale_netflow)
-document.add_paragraph(text,style = 'ListBullet')
-# 添加图片，并指定宽度
-document.add_picture('/root/xianhuo/out/btc_whale_v.png',width = Inches(5.25))
+document.add_picture('btc_simi.png',width = Inches(6.25))
 
 
-# -----  链上稳定币监控
-document.add_page_break()
-#p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'2.链上稳定币监控',level = 1)
-
-document.add_paragraph('以下统计的稳定币包括USDT/USDC/BUSD/TUSD共四种',style = 'ListBullet')
-document.add_picture('/root/xianhuo/out/BTC价格-稳定币发行总量.png',width = Inches(6))
-
-document.add_paragraph('近7日稳定币总量值',style = 'ListBullet')
-all_stable_coin = all_stable_coin[['date','Toal Supply']]
-all_stable_coin = all_stable_coin.reset_index(drop=True)
-sub_all_stable_coin = all_stable_coin[-7:]
-
-t = document.add_table(rows=1, cols=2) # 插入表格，先将表头写好，参数：rows:行，cols:列
-hdr_cells = t.rows[0].cells
-hdr_cells[0].text = '时间' # 表头
-hdr_cells[1].text = '数量'# 表头
-
-for d in sub_all_stable_coin.values.tolist(): # 
-    print(d)
-    for date,Supply in [d]: # 读取每一行内容
-        row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
-        row_cells[0].text = str(date)
-        row_cells[1].text = str(round(Supply,2))
-        
-#usdt的溢价率
-document.add_paragraph('USDT场外溢价率监控',style = 'ListBullet')
-#p = document.add_paragraph('This is a paragraph in new page.')
-
-usdt_data = usdt_data.sort_values(by='date')
-usdt_data = usdt_data.reset_index(drop=True)
-
-usdt_price = usdt_data['usdt'][len(usdt_data)-1]
-usd_price = usdt_data['usd'][len(usdt_data)-1]
-usdt_per = usdt_data['per'][len(usdt_data)-1]
-document.add_paragraph('当前USD兑CNY价格为：%s'%(usd_price),style = 'ListBullet')
-document.add_paragraph('当前USDT场外兑CNY价格为：%s'%(usdt_price),style = 'ListBullet')
-document.add_paragraph('当前USDT场外溢价率为：%s'%(usdt_per),style = 'ListBullet')
-
-#usdt流入交易所
-document.add_paragraph('交易所USDT净流入量',style = 'ListBullet')
-u_jinliuru_data = u_jinliuru_data.reset_index(drop=True)
-usdt_netflow = u_jinliuru_data['value'][len(u_jinliuru_data)-1]
-text = '昨日交易所USDT净流入量为：%s。'%(usdt_netflow)
-document.add_paragraph(text,style = 'ListBullet')
-# 添加图片，并指定宽度
-document.add_picture('/root/xianhuo/out/usdt_netflow.png',width = Inches(5.25))
-
-
-# ----- 重要链上指标
-document.add_page_break()
-#p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'3.重要链上指标',level = 1)
-
-document.add_paragraph('短期行情',style = 'ListBullet')
-
-res_df = res_df.reset_index(drop=True)
-asopr_v = res_df['aSOPR'][len(res_df)-1]
-sopr_7v = res_df['7MA aSOPR'][len(res_df)-1]
-
-
-document.add_paragraph('aSOPR',style = 'ListBullet')
-document.add_paragraph('当aSOPR值大于1时，说明BTC全网持有者总体处于盈利状态，当其小于1时，说明总体处于亏损状态，在目前市场状态下是看涨信号,可以少量现货进入。',style = 'ListBullet')
-document.add_paragraph('昨日收盘值为：%s'%(asopr_v),style = 'ListBullet')
-document.add_picture('/root/xianhuo/out/aSOPR.png',width = Inches(5.25))
-
-
-document.add_paragraph('7MA aSOPR',style = 'ListBullet')
-document.add_paragraph('当7MA aSOPR值大于1时，说明BTC全网持有者总体处于盈利状态，当其小于1时，说明总体处于亏损状态，在目前市场状态下是可以开启定投。',style = 'ListBullet')
-document.add_paragraph('昨日收盘值为：%s'%(sopr_7v),style = 'ListBullet')
-document.add_picture('/root/xianhuo/out/7MA_aSOPR.png',width = Inches(5.25))
-
-document.add_paragraph('BTC RISK INDEX',style = 'ListBullet')
-risk_data = risk_data.reset_index(drop=True)
-risk = risk_data['value'][len(risk_data)-1]
-document.add_paragraph('昨日收盘值为：%s'%(risk),style = 'ListBullet')
-document.add_picture('/root/xianhuo/out/risk_index.png',width = Inches(5.25))
-
-document.add_paragraph('Entity-Adjusted STH-NUPL',style = 'ListBullet')
-nupl_data = nupl_data.reset_index(drop=True)
-nupl = nupl_data['value'][len(nupl_data)-1]
-document.add_paragraph('昨日收盘值为：%s'%(nupl),style = 'ListBullet')
-document.add_picture('/root/xianhuo/out/sth_nupl.png',width = Inches(5.25))
-
-
-
-document.add_paragraph('周期行情',style = 'ListBullet')
-
-pm_v = res_df['Puell Multiple'][len(res_df)-1]
-mvrv_v = res_df['MVRV Z-Score'][len(res_df)-1]
-supply_v = res_df['Percent Supply in Profit'][len(res_df)-1]
-rhodl_v = res_df['RHODL Ratio'][len(res_df)-1]
-
-
-document.add_paragraph('MVRV Z-Score',style = 'ListBullet')
-document.add_paragraph('当MVRV Z-Score值大于7时，是牛顶信号，当其小于0时，是熊底信号。',style = 'ListBullet')      
-document.add_paragraph('昨日收盘值为：%s'%(mvrv_v),style = 'ListBullet')
-document.add_picture('/root/xianhuo/out/MVRV_Z_Score.png',width = Inches(5.25))
-
-document.add_paragraph('Puell Multiple',style = 'ListBullet')
-document.add_paragraph('当Puell Multiple值大于4时，是牛顶信号，当其小于0.5时，是熊底信号。',style = 'ListBullet')
-document.add_paragraph('昨日收盘值为：%s'%(pm_v),style = 'ListBullet')
-document.add_picture('/root/xianhuo/out/Puell.png',width = Inches(5.25))
-
-document.add_paragraph('Percent Supply in Profit',style = 'ListBullet')
-document.add_paragraph('当Percent Supply in Profit值大于0.95时，是牛顶信号，当其小于0.5时，是熊底信号。',style = 'ListBullet')
-document.add_paragraph('昨日收盘值为：%s'%(supply_v),style = 'ListBullet')
-document.add_picture('/root/xianhuo/out/Percent_Supply.png',width = Inches(5.25))
-
-document.add_paragraph('RHODL Ratio',style = 'ListBullet')
-document.add_paragraph('当RHODL Ratio值大于49000时，是牛顶信号，当其小于350时，是熊底信号。',style = 'ListBullet')
-document.add_paragraph('昨日收盘值为：%s'%(rhodl_v),style = 'ListBullet')
-document.add_picture('/root/xianhuo/out/RHODL.png',width = Inches(5.25))
 
 # -----  黑天鹅事件
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
-document.add_heading(u'5.黑天鹅事件监控',level = 1)
+document.add_heading(u'3.黑天鹅事件监控',level = 1)
 
 document.add_paragraph(content_us,style = 'ListBullet')
 document.add_paragraph(content_gox,style = 'ListBullet')
 # 添加图片，并指定宽度
-document.add_picture('/root/xianhuo/out/US_MT.png',width = Inches(5.25))
+document.add_picture('US_MT.png',width = Inches(6.25))
 
 document.add_paragraph('今年美国政府转移BTC时间',style = 'ListBullet')
 t = document.add_table(rows=1, cols=3) # 插入表格，先将表头写好，参数：rows:行，cols:列
@@ -1446,6 +1415,219 @@ for d in last_data_us.values.tolist(): #
 
 
 
+
+# -----  链上大额转账监控
+document.add_page_break()
+#p = document.add_paragraph('This is a paragraph in new page.')
+document.add_heading(u'4.链上大额转账监控',level = 1)
+
+sub_zhuanzhang_df_1 = zhuanzhang_df[(zhuanzhang_df.crypto.isin (['BTC','ETH'])) & (zhuanzhang_df.value>1000)]
+document.add_paragraph('大额BTC/ETH流入交易所是砸盘信号，大额USDT/USDC转入交易所是买盘信号。',style = 'ListBullet')
+if len(sub_zhuanzhang_df_1) == 0:
+    content_tr = '近6个小时没有超大额(价值大于1000万刀)BTC/ETH转入交易所。'
+    document.add_paragraph(content_tr,style = 'ListBullet')
+else:
+    sub_zhuanzhang_df_1 = sub_zhuanzhang_df_1.reset_index(drop=True)
+    for i in range(len(sub_zhuanzhang_df_1)):
+        s_date = sub_zhuanzhang_df_1['date'][i]
+        s_crypto = sub_zhuanzhang_df_1['crypto'][i]
+        s_exchange = sub_zhuanzhang_df_1['exchange'][i]
+        s_hash = sub_zhuanzhang_df_1['hash'][i]
+        content_tr = '%s有大额%s转入%s交易所，交易哈希为：%s'%(s_date,s_crypto,s_exchange,s_hash)
+        document.add_paragraph(content_tr,style = 'ListBullet')
+sub_zhuanzhang_df_2 = zhuanzhang_df[(zhuanzhang_df.crypto.isin (['USDT','USDC'])) & (zhuanzhang_df.value>1000)]
+if len(sub_zhuanzhang_df_2) == 0:
+    content_tr_w = '近6个小时没有超大额(价值大于1000万刀)USDT/USDT转入交易所。'
+    document.add_paragraph(content_tr_w,style = 'ListBullet')
+else:
+    sub_zhuanzhang_df_2 = sub_zhuanzhang_df_2.reset_index(drop=True)
+    for i in range(len(sub_zhuanzhang_df_2)):
+        s_date = sub_zhuanzhang_df_2['date'][i]
+        s_crypto = sub_zhuanzhang_df_2['crypto'][i]
+        s_exchange = sub_zhuanzhang_df_2['exchange'][i]
+        s_hash = sub_zhuanzhang_df_2['hash'][i]
+        content_tr = '%s有大额%s转入%s交易所，交易哈希为：%s'%(s_date,s_crypto,s_exchange,s_hash)
+        document.add_paragraph(content_tr,style = 'ListBullet')     
+zhuanzhang_df['date'] = zhuanzhang_df['date'].apply(lambda x:str(x))
+#print(zhuanzhang_df)
+t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
+hdr_cells = t.rows[0].cells
+hdr_cells[0].text = '时间' # 表头
+hdr_cells[1].text = '币种'# 表头
+hdr_cells[2].text = '转入交易所'# 表头
+hdr_cells[3].text = '转入数量'# 表头
+hdr_cells[4].text = '币价值'# 表头
+
+for d in zhuanzhang_df.values.tolist(): # 
+    print(d)
+    for date,crypto,exchange,number,value,hash_ in [d]: # 读取每一行内容
+        row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
+        row_cells[0].text = date 
+        row_cells[1].text = crypto
+        row_cells[2].text = exchange 
+        row_cells[3].text = str(number)
+        row_cells[4].text = str(value)
+# -----  链上稳定币监控
+document.add_page_break()
+#p = document.add_paragraph('This is a paragraph in new page.')
+document.add_heading(u'5.链上稳定币监控',level = 1)
+
+document.add_paragraph('以下统计的稳定币包括USDT/USDC/BUSD/TUSD共四种',style = 'ListBullet')
+document.add_picture('BTC价格-稳定币发行总量.png',width = Inches(6.25))
+
+document.add_paragraph('近7日稳定币总量值',style = 'ListBullet')
+all_stable_coin = all_stable_coin[['date','Toal Supply']]
+all_stable_coin = all_stable_coin.reset_index(drop=True)
+sub_all_stable_coin = all_stable_coin[-7:]
+
+t = document.add_table(rows=1, cols=2) # 插入表格，先将表头写好，参数：rows:行，cols:列
+hdr_cells = t.rows[0].cells
+hdr_cells[0].text = '时间' # 表头
+hdr_cells[1].text = '数量'# 表头
+
+for d in sub_all_stable_coin.values.tolist(): # 
+    print(d)
+    for date,Supply in [d]: # 读取每一行内容
+        row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
+        row_cells[0].text = str(date)
+        row_cells[1].text = str(round(Supply,2))
+        
+# -----  美国重要经济数据公布日期
+document.add_page_break()
+#p = document.add_paragraph('This is a paragraph in new page.')
+document.add_heading(u'6.美国重要经济数据公布日期',level = 1)
+
+document.add_paragraph('CME美联储加息预测：https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html',style = 'ListBullet')
+if len(sub_us_eco_df) == 0:
+    document.add_paragraph('%s日无重要经济数据公布'%(str(date_now)[0:10]),style = 'ListBullet')
+else:
+    sub_us_eco_df = sub_us_eco_df.reset_index(drop=True)
+    event_t = sub_us_eco_df['事件'][0]
+    document.add_paragraph('%s日%s经济数据公布'%(str(date_now)[0:10],event_t),style = 'ListBullet')
+document.add_paragraph('金十数据日历提醒：https://datacenter.jin10.com',style = 'ListBullet')    
+t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
+hdr_cells = t.rows[0].cells
+hdr_cells[0].text = '事件' # 表头
+hdr_cells[1].text = '重要性'# 表头
+hdr_cells[2].text = '公布时间'# 表头
+hdr_cells[3].text = '预测值'# 表头
+hdr_cells[4].text = '前值'# 表头
+
+for d in us_eco_df.values.tolist(): # 
+    print(d)
+    for event,importent,date,pre_value,before_value,a_date in [d]: # 读取每一行内容
+        row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
+        row_cells[0].text = event 
+        row_cells[1].text = importent
+        row_cells[2].text = str(date) 
+        row_cells[3].text = pre_value
+        row_cells[4].text = before_value 
+
+# ----- 聪明钱地址
+document.add_page_break()
+#p = document.add_paragraph('This is a paragraph in new page.')
+document.add_heading(u'7.聪明钱地址监控',level = 1)
+now_value = res_df_smart['value'][len(res_df_smart)-1]
+pre_value = res_df_smart['value'][len(res_df_smart)-2]
+
+change = now_value - pre_value
+
+if change >= 0:
+    content = '该地址昨日共买入%s个ETH'%(str(change))
+    document.add_paragraph(content,style = 'ListBullet')
+else:
+    content = '该地址昨日共卖出%s个ETH'%(str(-change))
+    document.add_paragraph(content,style = 'ListBullet')
+# 添加图片，并指定宽度
+document.add_picture('eth_smart.png',width = Inches(6.25))
+
+document.add_paragraph('以太坊基金会持币地址',style = 'ListBullet')
+document.add_paragraph('以太坊基金会号称逃顶大师，每次卖出之后的一段行情都是下跌趋势',style = 'ListBullet')
+now_value_fund = res_df_fund['value'][len(res_df_fund)-1]
+pre_value_fund = res_df_fund['value'][len(res_df_fund)-2]
+
+change_fund = now_value_fund - pre_value_fund
+
+if change_fund >= 0:
+    content_fund = '基金会地址昨日共转入%s个ETH'%(str(change_fund))
+    document.add_paragraph(content_fund,style = 'ListBullet')
+else:
+    content_fund = '基金会地址昨日共转出%s个ETH'%(str(-change_fund))
+    document.add_paragraph(content_fund,style = 'ListBullet')    
+document.add_picture('eth_fund.png',width = Inches(6.25))
+
+# ----- usdt的溢价率
+document.add_page_break()
+#p = document.add_paragraph('This is a paragraph in new page.')
+document.add_heading(u'8.USDT场外溢价率预测',level = 1)
+
+usdt_data = usdt_data.sort_values(by='date')
+usdt_data = usdt_data.reset_index(drop=True)
+
+usdt_price = usdt_data['usdt'][len(usdt_data)-1]
+usd_price = usdt_data['usd'][len(usdt_data)-1]
+usdt_per = usdt_data['per'][len(usdt_data)-1]
+document.add_paragraph('当前USD兑CNY价格为：%s'%(usd_price),style = 'ListBullet')
+document.add_paragraph('当前USDT场外兑CNY价格为：%s'%(usdt_price),style = 'ListBullet')
+document.add_paragraph('当前USDT场外溢价率为：%s'%(usdt_per),style = 'ListBullet')
+
+document.add_paragraph('注意红线只是未来24小时BTC价格变化趋势，其高低不代表实际能达到的价格。',style = 'ListBullet')
+# 添加图片，并指定宽度
+document.add_picture('future_24.png',width = Inches(6.25))
+
+
+# ----- 短期链上指标
+document.add_page_break()
+#p = document.add_paragraph('This is a paragraph in new page.')
+document.add_heading(u'9.短期行情链上指标',level = 1)
+
+
+res_df = res_df.reset_index(drop=True)
+asopr_v = res_df['aSOPR'][len(res_df)-1]
+sopr_7v = res_df['7MA aSOPR'][len(res_df)-1]
+
+
+document.add_paragraph('aSOPR',style = 'ListBullet')
+document.add_paragraph('当aSOPR值大于1时，说明BTC全网持有者总体处于盈利状态，当其小于1时，说明总体处于亏损状态，在目前市场状态下是看涨信号,可以少量现货进入。',style = 'ListBullet')
+document.add_paragraph('昨日收盘值为：%s'%(asopr_v),style = 'ListBullet')
+document.add_picture('aSOPR.png',width = Inches(5.25))
+
+
+document.add_paragraph('7MA aSOPR',style = 'ListBullet')
+document.add_paragraph('当7MA aSOPR值大于1时，说明BTC全网持有者总体处于盈利状态，当其小于1时，说明总体处于亏损状态，在目前市场状态下是可以开启定投。',style = 'ListBullet')
+document.add_paragraph('昨日收盘值为：%s'%(sopr_7v),style = 'ListBullet')
+document.add_picture('7MA_aSOPR.png',width = Inches(5.25))
+# ----- 长期链上指标
+document.add_page_break()
+#p = document.add_paragraph('This is a paragraph in new page.')
+document.add_heading(u'10.长期行情链上指标',level = 1)
+
+pm_v = res_df['Puell Multiple'][len(res_df)-1]
+mvrv_v = res_df['MVRV Z-Score'][len(res_df)-1]
+supply_v = res_df['Percent Supply in Profit'][len(res_df)-1]
+rhodl_v = res_df['RHODL Ratio'][len(res_df)-1]
+
+
+document.add_paragraph('MVRV Z-Score',style = 'ListBullet')
+document.add_paragraph('当MVRV Z-Score值大于7时，是牛顶信号，当其小于0时，是熊底信号。',style = 'ListBullet')      
+document.add_paragraph('昨日收盘值为：%s'%(mvrv_v),style = 'ListBullet')
+document.add_picture('MVRV_Z_Score.png',width = Inches(5.25))
+
+document.add_paragraph('Puell Multiple',style = 'ListBullet')
+document.add_paragraph('当Puell Multiple值大于4时，是牛顶信号，当其小于0.5时，是熊底信号。',style = 'ListBullet')
+document.add_paragraph('昨日收盘值为：%s'%(pm_v),style = 'ListBullet')
+document.add_picture('Puell.png',width = Inches(5.25))
+
+document.add_paragraph('Percent Supply in Profit',style = 'ListBullet')
+document.add_paragraph('当Percent Supply in Profit值大于0.95时，是牛顶信号，当其小于0.5时，是熊底信号。',style = 'ListBullet')
+document.add_paragraph('昨日收盘值为：%s'%(supply_v),style = 'ListBullet')
+document.add_picture('Percent_Supply.png',width = Inches(5.25))
+
+document.add_paragraph('RHODL Ratio',style = 'ListBullet')
+document.add_paragraph('当RHODL Ratio值大于49000时，是牛顶信号，当其小于350时，是熊底信号。',style = 'ListBullet')
+document.add_paragraph('昨日收盘值为：%s'%(rhodl_v),style = 'ListBullet')
+document.add_picture('RHODL.png',width = Inches(5.25))
+
 # ===============================================================附录===================================================================
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
@@ -1454,9 +1636,46 @@ document.add_heading(u'附录',level = 1)
 per_1 = combine_data['per'][len(combine_data)-1]
 document.add_paragraph('ETH Price/BTC Price',style = 'ListBullet')
 document.add_paragraph('当前该比值为：%s'%(per_1),style = 'ListBullet')
-document.add_picture('/root/xianhuo/out/eth_btc.png',width = Inches(5.25))
+document.add_picture('eth_btc.png',width = Inches(6.25))
+'''
+document.add_paragraph('山寨币',style = 'ListBullet')
+t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
+hdr_cells = t.rows[0].cells
+hdr_cells[0].text = '排名' # 表头
+hdr_cells[1].text = '币种'# 表头
+hdr_cells[2].text = '价格'# 表头
+hdr_cells[3].text = '市值'# 表头
+
+for d in crypto_info_last.values.tolist(): # 
+    print(d)
+    for symbol,price_x,market_cap_x,tags,num in [d]: # 读取每一行内容
+        row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
+        row_cells[0].text = str(num) 
+        row_cells[1].text = str(symbol)
+        row_cells[2].text = str(price_x) 
+        row_cells[3].text = str(round(market_cap_x,2))
+'''
+document.add_paragraph('MEME币',style = 'ListBullet')
+document.add_paragraph('MEME币作为市场情绪的判断，一般其到达高峰就是下跌的开始。',style = 'ListBullet')
+t = document.add_table(rows=1, cols=5) # 插入表格，先将表头写好，参数：rows:行，cols:列
+hdr_cells = t.rows[0].cells
+hdr_cells[0].text = '时间' # 表头
+hdr_cells[1].text = 'DOGE'# 表头
+hdr_cells[2].text = 'SHIB'# 表头
+hdr_cells[3].text = 'PEPE'# 表头
+hdr_cells[4].text = 'ORDI'# 表头
+
+for d in res_df_all.values.tolist(): # 
+    print(d)
+    for date,doge,shib,pepe,ordi in [d]: # 读取每一行内容
+        row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
+        row_cells[0].text = str(date) 
+        row_cells[1].text = str(doge)
+        row_cells[2].text = str(shib) 
+        row_cells[3].text = str(pepe)
+        row_cells[4].text = str(ordi)
 
 # 保存文档
-document.save('btc.doc')
+document.save('BTC现货策略数据.doc')
 
 

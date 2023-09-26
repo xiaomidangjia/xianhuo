@@ -19,6 +19,7 @@ from watermarker.marker import add_mark
 
 
 #======自动发邮件
+date_now = datetime.datetime.utcnow()
 data_value = str(date_now)[0:10]
 
 # 调用smtplib模块。
