@@ -910,7 +910,22 @@ axes_fu.set_ylabel("Percent Supply in Profit",fontsize=10)
 plt.savefig('Percent_Supply.png')
 plt.close()
 add_mark(file = "Percent_Supply.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
+# =======================================================================未来24小时价格预测==================================================================
 
+date_now = datetime.datetime.utcnow()
+date_before = pd.to_datetime(date_now) - datetime.timedelta(days=8)
+# 读取原始数据
+raw_data = pd.read_csv('/root/usdt/usdt.csv')
+raw_data = raw_data[2:]
+raw_data['date'] = raw_data['date'].apply(lambda x: str(x)[6:10] + '/' + str(x)[3:5] + '/' + str(x)[0:2] + ' ' + str(x)[11:19])
+raw_data['date'] = pd.to_datetime(raw_data['date'])
+raw_data['date'] = raw_data['date'] - datetime.timedelta(hours=8)
+#取最近7天的数据
+raw_data = raw_data[(raw_data.date >= date_before) & (raw_data.date < date_now)]
+raw_data['date_dd'] = raw_data['date'].apply(lambda x: str(x)[0:10])
+raw_data['date_hh'] = raw_data['date'].apply(lambda x: str(x)[11:13])
+raw_data['per'] = raw_data['usdt']/raw_data['usd']
+usdt_data = raw_data
 # ========================================================================附录=========================================================================
 url_address = ['https://api.glassnode.com/v1/metrics/market/price_usd_close']
 url_name = ['Price']
