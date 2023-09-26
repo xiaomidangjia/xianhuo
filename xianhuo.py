@@ -83,6 +83,63 @@ price_data = pd.DataFrame({'date':date,'close':close_p})
 price_data = price_data.sort_values(by=['date'])
 price_data = price_data.reset_index(drop=True)
 
+url_address = ['https://api.glassnode.com/v1/metrics/market/price_usd_close']
+url_name = ['Price']
+# insert your API key here
+API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
+data_list = []
+for num in range(len(url_name)):
+    print(num)
+    addr = url_address[num]
+    name = url_name[num]
+    # make API request
+    res_addr = requests.get(addr,params={'a': 'BTC', 'api_key': API_KEY})
+    # convert to pandas dataframe
+    ins = pd.read_json(res_addr.text, convert_dates=['t'])
+    ins['date'] =  ins['t']
+    ins[name] =  ins['v']
+    ins = ins[['date',name]]
+    data_list.append(ins)
+result_data = data_list[0][['date']]
+for i in range(len(data_list)):
+    df = data_list[i]
+    result_data = result_data.merge(df,how='left',on='date')
+#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
+last_data = result_data[(result_data.date>='2010-01-01')]
+from dateutil.relativedelta import relativedelta 
+#last_data['new_date'] = last_data['date'].apply(lambda x:x + relativedelta(years=1))
+last_data = last_data.sort_values(by=['date'])
+last_data = last_data.reset_index(drop=True)
+date = []
+price_raw = []
+price_ma120 = []
+price_ma200 = []
+price_ma4y = []
+for j in range(len(last_data)-1824):
+    ins = last_data[j:j+1825]
+    ins = ins.sort_values(by='date')
+    ins = ins.reset_index(drop=True)
+    date.append(ins['date'][1824])
+    price_raw.append(ins['Price'][1824])
+    price_ma4y.append(np.mean(ins['Price'][-1459:]))
+    price_ma200.append(np.mean(ins['Price'][-199:]))
+    price_ma120.append(np.mean(ins['Price'][-119:]))
+jun_df = pd.DataFrame({'date':date,'price_raw':price_raw,'price_ma120':price_ma120,'price_ma200':price_ma200,'price_ma4y':price_ma4y})
+jun_df = jun_df[(jun_df.date>='2018-12-01')]
+f, axes = plt.subplots(figsize=(20, 10))
+axes_fu = axes.twinx()
+
+sns.lineplot(x="date", y="price_raw", data=jun_df, color = 'black', linewidth=0.5,ci=95, ax=axes)
+sns.lineplot(x="date", y="price_ma120",color='red', linewidth=0.5,data=jun_df, ci=95, ax=axes)
+sns.lineplot(x="date", y="price_ma200",color='green', linewidth=0.5,data=jun_df, ci=95, ax=axes)
+sns.lineplot(x="date", y="price_ma4y",color='blue', linewidth=0.5,data=jun_df, ci=95, ax=axes)
+plt.title('BTC价格-120D/200D/4Y线', fontsize=20,fontproperties=prop) 
+axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
+axes.set_ylabel("BTC价格",fontsize=14,fontproperties=prop)
+plt.savefig('BTC价格120D.png',  bbox_inches='tight')
+plt.close()
+
+add_mark(file = "BTC价格120D.png", out = "out",mark = "MMC研究猿卡森出品", opacity=0.2, angle=30, space=30)
 
 # =======================================================================btc链上数据===================================================================
 
@@ -1152,4 +1209,38 @@ doc_name = '%s日BTC链上数据一览'%(str(date_now)[0:10]) + '.doc'
 # 保存文档
 document.save(doc_name)
 
+#鲸鱼异动报警
+import time
+from pprint import pprint
+import pandas as pd
+import numpy as np
+import datetime,time
+# For formatted dictionary printing>>>
+import telegram
+
+text_0 = '【综合分析】：经过近几日的价格上涨，有持续上升趋势，所以继续观察走势，不操作。'
+text_1 = '【综合分析】：可以尝试小资金进行抄底，虽然小资金，但是也要分批,因为价格下跌会有一个惯性趋势。'
+text_2 = '【综合分析】：BTC价格持续下跌，前期小资金抄底博反弹失效，目前已经进入到了定投阶段，可以稍微加大资金量，但不能ALL IN，防止黑天鹅事件。'
+text_3 = '【综合分析】：经过近几日的价格反弹，BTC已经暂时走出底部区域，前期抄底或定投的也可以分批套现。'
+
+if asopr_v >=1 and sopr_7v >=1:
+    text_4 = text_3
+elif asopr_v < 1 and sopr_7v >=1:
+    text_4 = text_1
+elif asopr_v >= 1 and sopr_7v <1:
+    text_4 = text_0
+elif asopr_v < 1 and sopr_7v <1:
+    text_4 = text_2
+
+content_1 ='【行情分析】目前是BTC现货开始大资金定投的状态，理由如下：BTC的价格均线呈现多头排列形式，但是当前价格低于120日均线，结合BTC风险指数处于较低状态，昨日交易所BTC处于净流出，稳定币USDT处于净流入状态，说明市场对BTC有一定的购买力，判断当前BTC的价格是低估状态。从短期链上指标SOPR和7MA SOPR来看，其值都是小于1，说明链上的BTC购买的价格是大于当前BTC价格，而长期行情的链上指标 MVRV_Z_Score，Puell Multiple，RHODL Ratio和Percent Supply in Profit都处于中间状态，不属于黑天鹅后带来的底部机会，所以从总体来看目前BTC的拥有者都处于略微亏损状态，结合目前是大周期中的萧条期，价格下跌在低位盘整后都会有一定反弹，所以现货层面可以分批买入。'
+content_2 ='【行情分析】目前是BTC现货可以小资金尝试抄底的状态，理由如下：短期链上指标SOPR值小于1，说明从总体来看目前BTC的拥有者都处于略微亏损状态，结合目前是大周期中的萧条期，价格下跌在低位盘整后都会有一定反弹，所以现货层面可以小资金买入，虽然是小资金，但是还是要进行分批买入。接下来我们需要观察7MA SOPR是否要小于1，如果小于1，可以逐渐加大资金量。'
+content_3 ='【行情分析】目前是BTC现货可以用中等资金进行定投状态，理由如下：经过前几天的BTC价格下跌，7MA SOPR开始小于1了，结合BTC风险指数处于较低状态，说明整体市场都处于比较严重亏损状态，经过前面的小资金的投入，目前可以继续执行定投策略，我们要时刻警惕黑天鹅事件到来，所以定投也不要打完自己所有的子弹，留一手为了黑天鹅准备。大周期行情的底部我们要密切观察长期行情的链上指标 MVRV_Z_Score，Puell Multiple，RHODL Ratio和Percent Supply in Profit这四个指标值。'
+content_4 ='【行情分析】目前是BTC现货需要继续观察，不建议进行投资，理由如下：短期链上指标SOPR值和7MA SOPR都大于 ，说明链上买BTC的用户都处于盈利状态，比特币风险指数也处于较高的状态，说明短期内有一定的抛压压力。'
+
+date_now = datetime.datetime.utcnow()
+tg_doc_name = '/root/xianhuo/' + '%s日BTC链上数据一览'%(str(date_now)[0:10]) + '.doc'
+
+bot = telegram.Bot(token='6343206405:AAHkaKIXCMvif0yqkzvTYWasYPEIsTmImgQ')
+bot.sendDocument(chat_id='-1001975215255', document=open(tg_doc_name, 'rb'),message_thread_id=5) #链上数据分享
+bot.sendMessage(chat_id='-1001975215255', text = text_4,message_thread_id=5) #链上数据分享
 
