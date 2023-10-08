@@ -694,7 +694,7 @@ tusd_data.rename(columns={'value':'supply_tusd'},inplace=True)
 all_stable_coin = usdt_data.merge(tusd_data,how='left',on=['date'])
 all_stable_coin = all_stable_coin.fillna(0)
 #all_stable_coin['all'] = all_stable_coin['supply_usdt'] + all_stable_coin['supply_usdc'] + all_stable_coin['supply_busd'] + all_stable_coin['supply_tusd']
-all_stable_coin['all'] = all_stable_coin['supply_usdt'] + all_stable_coin['supply_usdc'] + all_stable_coin['supply_busd'] + all_stable_coin['supply_tusd']
+all_stable_coin['all'] = all_stable_coin['supply_usdt'] + all_stable_coin['supply_tusd']
 all_stable_coin = all_stable_coin.merge(price_data,how='left',on=['date'])
 all_stable_coin = all_stable_coin.sort_values(by='date')
 all_stable_coin = all_stable_coin.reset_index(drop=True)
