@@ -610,6 +610,7 @@ for i in range(len(data_list)):
 #last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
 usdt_data = result_data[(result_data.date>='2018-01-01')]
 usdt_data.rename(columns={'value':'supply_usdt'},inplace=True)
+'''
 url_address = [ 'https://api.glassnode.com/v1/metrics/supply/current']
 url_name = ['supply_usdc']
 # insert your API key here
@@ -662,6 +663,7 @@ for i in range(len(data_list)):
 #last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
 busd_data = result_data[(result_data.date>='2018-01-01')]
 busd_data.rename(columns={'value':'supply_busd'},inplace=True)
+'''
 url_address = [ 'https://api.glassnode.com/v1/metrics/supply/current']
 url_name = ['supply_tusd']
 # insert your API key here
@@ -688,8 +690,10 @@ for i in range(len(data_list)):
 #last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
 tusd_data = result_data[(result_data.date>='2018-01-01')]
 tusd_data.rename(columns={'value':'supply_tusd'},inplace=True)
-all_stable_coin = usdt_data.merge(usdc_data,how='left',on=['date']).merge(busd_data,how='left',on=['date']).merge(tusd_data,how='left',on=['date'])
+#all_stable_coin = usdt_data.merge(usdc_data,how='left',on=['date']).merge(busd_data,how='left',on=['date']).merge(tusd_data,how='left',on=['date'])
+all_stable_coin = usdt_data.merge(tusd_data,how='left',on=['date'])
 all_stable_coin = all_stable_coin.fillna(0)
+#all_stable_coin['all'] = all_stable_coin['supply_usdt'] + all_stable_coin['supply_usdc'] + all_stable_coin['supply_busd'] + all_stable_coin['supply_tusd']
 all_stable_coin['all'] = all_stable_coin['supply_usdt'] + all_stable_coin['supply_usdc'] + all_stable_coin['supply_busd'] + all_stable_coin['supply_tusd']
 all_stable_coin = all_stable_coin.merge(price_data,how='left',on=['date'])
 all_stable_coin = all_stable_coin.sort_values(by='date')
@@ -701,7 +705,8 @@ axes_fu = axes.twinx()
 
 sns.lineplot(x="date", y="close",color='black', linewidth=0.5,data=all_stable_coin, ci=95, ax=axes)
 sns.lineplot(x="date", y="Toal Supply",color='blue', linewidth=0.5,data=all_stable_coin, ci=95, ax=axes_fu)
-plt.title('USDT/USDC/BUSD/TUSD链上总发行量', fontsize=20,fontproperties=prop) 
+#plt.title('USDT/USDC/BUSD/TUSD链上总发行量', fontsize=20,fontproperties=prop) 
+plt.title('USDT/TUSD链上总发行量', fontsize=20,fontproperties=prop) 
 axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
 axes.set_ylabel("BTC价格",fontsize=14,fontproperties=prop)
 axes_fu.set_ylabel("发行总量",fontsize=14,fontproperties=prop)
@@ -926,6 +931,90 @@ raw_data['date_dd'] = raw_data['date'].apply(lambda x: str(x)[0:10])
 raw_data['date_hh'] = raw_data['date'].apply(lambda x: str(x)[11:13])
 raw_data['per'] = raw_data['usdt']/raw_data['usd']
 usdt_data = raw_data
+# =======================================================================衍生品指标=====================================================================
+url_address = ['https://api.glassnode.com/v1/metrics/derivatives/options_25delta_skew_1_week',
+                'https://api.glassnode.com/v1/metrics/derivatives/futures_volume_daily_perpetual_sum']
+url_name = ['options', 'futures']
+# insert your API key here
+API_KEY = '26BLocpWTcSU7sgqDdKzMHMpJDm'
+data_list = []
+for num in range(len(url_name)):
+    print(num)
+    addr = url_address[num]
+    name = url_name[num]
+    # make API request
+    res_addr = requests.get(addr,params={'a': 'BTC', 'api_key': API_KEY})
+    # convert to pandas dataframe
+    ins = pd.read_json(res_addr.text, convert_dates=['t'])
+    ins['date'] =  ins['t']
+    ins[name] =  ins['v']
+    ins = ins[['date',name]]
+    data_list.append(ins)
+
+result_data = data_list[0][['date']]
+for i in range(len(data_list)):
+    df = data_list[i]
+    result_data = result_data.merge(df,how='left',on='date')
+#last_data = result_data[(result_data.date>='2016-01-01') & (result_data.date<='2020-01-01')]
+dev_data = result_data[(result_data.date>='2020-01-01')]
+dev_data = dev_data.sort_values(by=['date'])
+dev_data = dev_data.reset_index(drop=True)
+
+
+
+date = []
+dev_op = []
+dev_fu = []
+for j in range(7,len(dev_data)+1):
+    ins = dev_data[j-7:j]
+    ins = ins.sort_values(by='date')
+    ins = ins.reset_index(drop=True)
+    date.append(ins['date'][6])
+    dev_op.append(np.mean(ins['options']))
+    dev_fu.append(np.mean(ins['futures']))
+dev_data_1 = pd.DataFrame({'date':date,'dev_op':dev_op,'dev_fu':dev_fu})
+dev_data_1 = dev_data_1[(dev_data_1.date>='2021-01-01')]
+
+
+dev_data_1 = dev_data_1.merge(price_data,how='left',on=['date'])
+
+
+f, axes = plt.subplots(figsize=(20, 10))
+axes_fu = axes.twinx()
+sns.lineplot(x="date", y="dev_op",color='red',data=dev_data_1, ax=axes_fu)
+sns.lineplot(x="date", y="close",color='black', data=dev_data_1, ax=axes)
+axes.tick_params(labelsize=10)
+plt.title('Options 25 Delta Skew (1 Week) - Deribit (7d Moving Average)', fontsize=10) 
+axes.legend(loc='upper left', fontsize=5)
+axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
+axes.set_ylabel("BTC price",fontsize=10)
+axes_fu.set_ylabel("Options 25 Delta Skew (1 Week)",fontsize=10)
+
+#plt.show()
+plt.savefig('btc_options.png')
+plt.close()
+
+
+f, axes = plt.subplots(figsize=(20, 10))
+axes_fu = axes.twinx()
+sns.lineplot(x="date", y="dev_fu",color='red',data=dev_data_1, ax=axes_fu)
+sns.lineplot(x="date", y="close",color='black', data=dev_data_1, ax=axes)
+axes.tick_params(labelsize=10)
+plt.title('Futures Volume Perpetual [USD] - All Exchanges (7d Moving Average)', fontsize=10) 
+axes.legend(loc='upper left', fontsize=5)
+axes.set_xlabel('时间',fontsize=14,fontproperties=prop)
+axes.set_ylabel("BTC price",fontsize=10)
+axes_fu.set_ylabel("Futures Volume Perpetual",fontsize=10)
+
+#plt.show()
+plt.savefig('btc_futures.png')
+plt.close()
+
+
+
+
+
+
 # ========================================================================附录=========================================================================
 url_address = ['https://api.glassnode.com/v1/metrics/market/price_usd_close']
 url_name = ['Price']
@@ -1009,7 +1098,7 @@ document.add_paragraph('BTC价格和流入流出交易所',style = 'ListBullet')
 document.add_paragraph('链上稳定币监控',style = 'ListBullet')
 document.add_paragraph('重要链上指标监控',style = 'ListBullet')
 document.add_paragraph('黑天鹅事件监控',style = 'ListBullet')
-
+document.add_paragraph('衍生品指标监控',style = 'ListBullet')
 
 # -----  120/200/4y 均线
 document.add_page_break()
@@ -1041,6 +1130,7 @@ document.add_paragraph(text,style = 'ListBullet')
 document.add_picture('/root/xianhuo/btc_dominance.png',width = Inches(5.25))
 
 document.add_paragraph('交易所比特币净流入量',style = 'ListBullet')
+document.add_paragraph('交易所比特币净流入量为负，说明有人在提币，净流入量为正，说明有人在卖币，在价格低位的时候一定是有人长期在定投囤币。',style = 'ListBullet')
 jinliuru_data = jinliuru_data.reset_index(drop=True)
 
 btc_netflow = jinliuru_data['value'][len(jinliuru_data)-1]
@@ -1050,6 +1140,7 @@ document.add_paragraph(text,style = 'ListBullet')
 document.add_picture('/root/xianhuo/btc_netflow.png',width = Inches(5.25))
 
 document.add_paragraph('近14日矿工每日平均流入交易所比特币量',style = 'ListBullet')
+document.add_paragraph('矿工转入交易所的BTC数量在减少说明长期看涨，在增多说明长期看跌。',style = 'ListBullet')
 miner_data = miner_data.reset_index(drop=True)
 
 miner_netflow = miner_data['miner_raw'][len(miner_data)-1]
@@ -1059,6 +1150,7 @@ document.add_paragraph(text,style = 'ListBullet')
 document.add_picture('/root/xianhuo/btc_miner_v.png',width = Inches(5.25))
 
 document.add_paragraph('近30日巨鲸每日平均流入交易所比特币量',style = 'ListBullet')
+document.add_paragraph('巨鲸转入交易所的BTC数量在减少说明长期看涨，在增多说明长期看跌。',style = 'ListBullet')
 whale_data = whale_data.reset_index(drop=True)
 
 whale_netflow = whale_data['whale_raw'][len(whale_data)-1]
@@ -1073,7 +1165,7 @@ document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
 document.add_heading(u'2.链上稳定币监控',level = 1)
 
-document.add_paragraph('以下统计的稳定币包括USDT/USDC/BUSD/TUSD共四种',style = 'ListBullet')
+document.add_paragraph('以下统计的稳定币包括USDT/TUSD两种',style = 'ListBullet')
 document.add_picture('/root/xianhuo/BTC价格-稳定币发行总量.png',width = Inches(6))
 
 document.add_paragraph('近7日稳定币总量值',style = 'ListBullet')
@@ -1207,6 +1299,18 @@ for d in last_data_us.values.tolist(): #
         row_cells[1].text = str(v1)
         row_cells[2].text = str(v2)
 
+# ----- 重要链上指标
+document.add_page_break()
+#p = document.add_paragraph('This is a paragraph in new page.')
+document.add_heading(u'5.衍生品指标',level = 1)
+
+document.add_paragraph('Deribit比特币期权 25 Delta Skew',style = 'ListBullet')
+document.add_paragraph('25 Delta Skew与比特币价格呈现明显的负相关关系，该值大说明比特币价格处于相对低位，该值小说明价格处于相对高位，要注意即使比特币价格在一直下跌，但是该值也在下跌，不是抄底的时刻。',style = 'ListBullet')
+document.add_picture('/root/xianhuo/btc_options.png',width = Inches(5.25))
+
+document.add_paragraph('永续合约总量',style = 'ListBullet')
+document.add_paragraph('永续合约总量处于阶段性低值的时候，说明价格下跌已经引不起交易者兴趣，这时候是比特币短期现货定投的开始位置。',style = 'ListBullet')
+document.add_picture('/root/xianhuo/btc_futures.png',width = Inches(5.25))
 
 
 # ===============================================================附录===================================================================
@@ -1231,7 +1335,7 @@ date_now = datetime.datetime.utcnow()
 doc_name = '%s日BTC链上数据一览'%(str(date_now)[0:10]) + '.doc'
 
 
-text_0 = '【综合分析】：经过近几日的价格上涨，有持续上升趋势，所以继续观察走势，不操作。'
+text_0 = '【综合分析】：经过近几日的价格上涨，有持续上升趋势，由于前期已经定投完成，所以继续观察走势，不操作。'
 text_1 = '【综合分析】：可以尝试小资金进行抄底，虽然小资金，但是也要分批,因为价格下跌会有一个惯性趋势。'
 text_2 = '【综合分析】：BTC价格持续下跌，前期小资金抄底博反弹失效，目前已经进入到了定投阶段，可以稍微加大资金量，但不能ALL IN，防止黑天鹅事件。'
 text_3 = '【综合分析】：经过近几日的价格反弹，BTC已经暂时走出底部区域，前期抄底或定投的也可以分批套现。'
