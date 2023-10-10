@@ -1353,8 +1353,8 @@ else:
 
 tg_doc_name = '/root/xianhuo/' + str(doc_name)
 print(tg_doc_name)
-bot = telegram.Bot(token='6343206405:AAHkaKIXCMvif0yqkzvTYWasYPEIsTmImgQ')
-bot.sendDocument(chat_id='-1001975215255', document=open(tg_doc_name, 'rb'),message_thread_id=5) #链上数据分享
-bot.sendMessage(chat_id='-1001975215255', text = text_4,message_thread_id=5) #链上数据分享
+bot = telegram.Bot(token='6361430672:AAG2qr7zuFQkcQb13Xtud2q8KksonuTNVN4')
+bot.sendDocument(chat_id='-1001920263299', document=open(tg_doc_name, 'rb'),message_thread_id=5) #链上数据分享
+bot.sendMessage(chat_id='-1001920263299', text = text_4,message_thread_id=5) #链上数据分享
 
 
