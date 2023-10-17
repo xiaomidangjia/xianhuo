@@ -1311,7 +1311,7 @@ document.add_paragraph('25 Delta Skew与比特币价格呈现明显的负相关�
 document.add_picture('/root/xianhuo/btc_options.png',width = Inches(5.25))
 
 document.add_paragraph('比特币期权近7日值',style = 'ListBullet')
-t = document.add_table(rows=1, cols=3) # 插入表格，先将表头写好，参数：rows:行，cols:列
+t = document.add_table(rows=1, cols=2) # 插入表格，先将表头写好，参数：rows:行，cols:列
 hdr_cells = t.rows[0].cells
 hdr_cells[0].text = '时间' # 表头
 hdr_cells[1].text = '当日options值'# 表头
@@ -1328,7 +1328,7 @@ document.add_paragraph('永续合约总量处于阶段性低值的时候，说�
 document.add_picture('/root/xianhuo/btc_futures.png',width = Inches(5.25))
 
 document.add_paragraph('永续合约总量近7日值',style = 'ListBullet')
-t = document.add_table(rows=1, cols=3) # 插入表格，先将表头写好，参数：rows:行，cols:列
+t = document.add_table(rows=1, cols=2) # 插入表格，先将表头写好，参数：rows:行，cols:列
 hdr_cells = t.rows[0].cells
 hdr_cells[0].text = '时间' # 表头
 hdr_cells[1].text = '永续合约当日总量'# 表头
