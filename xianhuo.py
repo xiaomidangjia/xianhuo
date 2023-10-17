@@ -1300,18 +1300,45 @@ for d in last_data_us.values.tolist(): #
         row_cells[2].text = str(v2)
 
 # ----- 重要链上指标
+sub_dev_data = dev_data[-7:]
+sub_dev_data = sub_dev_data.reset_index(drop=True)
 document.add_page_break()
 #p = document.add_paragraph('This is a paragraph in new page.')
 document.add_heading(u'5.衍生品指标',level = 1)
 
-document.add_paragraph('Deribit比特币期权 25 Delta Skew',style = 'ListBullet')
+document.add_paragraph('Deribit比特币期权 25 Delta Skew（7日均值）',style = 'ListBullet')
 document.add_paragraph('25 Delta Skew与比特币价格呈现明显的负相关关系，该值大说明比特币价格处于相对低位，该值小说明价格处于相对高位，要注意即使比特币价格在一直下跌，但是该值也在下跌，不是抄底的时刻。',style = 'ListBullet')
 document.add_picture('/root/xianhuo/btc_options.png',width = Inches(5.25))
 
-document.add_paragraph('永续合约总量',style = 'ListBullet')
+document.add_paragraph('比特币期权近7日值',style = 'ListBullet')
+t = document.add_table(rows=1, cols=3) # 插入表格，先将表头写好，参数：rows:行，cols:列
+hdr_cells = t.rows[0].cells
+hdr_cells[0].text = '时间' # 表头
+hdr_cells[1].text = '当日options值'# 表头
+
+for d in sub_dev_data.values.tolist(): # 
+    print(d)
+    for date,v1,v2 in [d]: # 读取每一行内容
+        row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
+        row_cells[0].text = str(date) 
+        row_cells[1].text = str(v1)
+
+document.add_paragraph('永续合约总量（7日均值）',style = 'ListBullet')
 document.add_paragraph('永续合约总量处于阶段性低值的时候，说明价格下跌已经引不起交易者兴趣，这时候是比特币短期现货定投的开始位置。',style = 'ListBullet')
 document.add_picture('/root/xianhuo/btc_futures.png',width = Inches(5.25))
 
+document.add_paragraph('永续合约总量近7日值',style = 'ListBullet')
+t = document.add_table(rows=1, cols=3) # 插入表格，先将表头写好，参数：rows:行，cols:列
+hdr_cells = t.rows[0].cells
+hdr_cells[0].text = '时间' # 表头
+hdr_cells[1].text = '永续合约当日总量'# 表头
+
+for d in sub_dev_data.values.tolist(): # 
+    print(d)
+    for date,v1,v2 in [d]: # 读取每一行内容
+        row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
+        row_cells[0].text = str(date) 
+        row_cells[2].text = str(v2)
 
 # ===============================================================附录===================================================================
 document.add_page_break()
