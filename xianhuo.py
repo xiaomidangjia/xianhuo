@@ -1338,7 +1338,7 @@ for d in sub_dev_data.values.tolist(): #
     for date,v1,v2 in [d]: # 读取每一行内容
         row_cells = t.add_row().cells # 读到一行就在word的表格中插入一行
         row_cells[0].text = str(date) 
-        row_cells[2].text = str(v2)
+        row_cells[1].text = str(v2)
 
 # ===============================================================附录===================================================================
 document.add_page_break()
